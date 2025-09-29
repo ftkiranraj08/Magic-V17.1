@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MAGiC</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lexend+Giga&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Lexend Giga', sans-serif;
+      text-align: center;
+      transition: background-color 2s ease-in-out;
+      overflow-x: hidden;
+      background-color: #009C4D;
+    }
+    /* Splash Screen */
+    .splash {
+      background-color: #009C4D;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
+      transition: opacity 1s ease-in-out;
+      overflow: hidden;
+    }
+    .magic-text {
+      font-size: 128px;
+      color: black;
+      opacity: 0;
+      animation: fadeIn 2s 1s forwards;
+      position: relative;
+      z-index: 2;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* Powered by section */
+    .powered-by {
+      position: absolute;
+      bottom: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      animation: fadeInPowered 1.5s 3.5s forwards;
+      z-index: 3;
+    }
+
+    .powered-text {
+      font-size: 24px;
+      color: rgb(11, 11, 11);
+      margin-bottom: 15px;
+      font-weight: 300;
+    }
+
+    .lab-logo {
+      width: 200px;
+      height: auto;
+      filter: brightness(1.1);
+    }
+
+    @keyframes fadeInPowered {
+      from { 
+        opacity: 0; 
+        transform: translateX(-50%) translateY(20px);
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    /* DNA Icons Animation */
+    .dna-icons {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .dna-icon {
+      position: absolute;
+      top: 100%;               /* start just below screen */
+      font-size: 120px;
+      color: rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      animation: floatDNA linear infinite;
+    }
+    @keyframes floatDNA {
+      0%   { transform: translateY(0) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(-300%) rotate(360deg); opacity: 0; }
+    }
+
+    /* Home Page */
+    .home {
+      display: none;
+      height: 100vh;
+      background-color: #e0f2e9;
+      color: black;
+      transition: background-color 2s ease-in-out;
+      position: relative;
+      overflow: hidden;
+    }
+    .welcome-text {
+      font-size: 40px;
+      font-weight: bold;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      animation: moveUp 2s 1s forwards, pulse 2s infinite alternate ease-in-out;
+      z-index: 2;
+    }
+    @keyframes moveUp {
+      0%   { opacity: 0; transform: translate(-50%, -50%); }
+      50%  { opacity: 1; transform: translate(-50%, -20%); }
+      100% { opacity: 1; transform: translate(-50%, -120%); }
+    }
+    @keyframes pulse {
+      from { transform: translate(-50%, -120%) scale(1); }
+      to   { transform: translate(-50%, -120%) scale(1.1); }
+    }
+
+    /* Side Menu */
+    .menu-btn {
+      font-family: 'Lexend Giga', sans-serif;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(0, 156, 77, 0.8);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 3;
+      border-radius: 5px;
+    }
+    .menu {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: linear-gradient(to bottom, #009C4D, #005F2D);
+      color: white;
+      padding: 20px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      transition: left 0.3s ease-in-out;
+      z-index: 3;
+      display: flex;              /* Add this */
+      flex-direction: column;     /* Add this */
+    }
+    .menu a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      margin: 20px 0;
+      padding: 10px;
+      transition: background 0.3s;
+    }
+    .menu a:hover { background: rgba(255,255,255,0.2); }
+    .menu.active { left: 0; }
+    .menu-open .home { margin-left: 250px; }
+    .fade-out { opacity: 0; pointer-events: none; }
+
+    /* Footer styling */
+/* Menu footer - pushes to bottom */
+.menu-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column; 
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+.powered-by-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  margin-top: 0%;
+  margin-bottom: 10px;         /* Space between text and logo */
+  font-weight: 300;
+  text-align: center;
+}
+
+.menu-footer-image {
+  width: 120px;
+  height: auto;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+.menu-footer-image:hover {
+  opacity: 1;
+}
+  </style>
+</head>
+<body>
+  <!-- Splash Screen -->
+  <div class="splash">
+    <div class="dna-icons">
+      <!-- three DNA icons at staggered horizontal positions -->
+      <i class="fas fa-dna dna-icon" style="left:20%; animation-delay:0s;"></i>
+      <i class="fas fa-dna dna-icon" style="left:50%; animation-delay:2s;"></i>
+      <i class="fas fa-dna dna-icon" style="left:80%; animation-delay:4s;"></i>
+    </div>
+    <div class="magic-text">MAGiC</div>
+    
+    <!-- Powered by section -->
+    <div class="powered-by">
+      <div class="powered-text">Powered by</div>
+      <img src="static/css/attached_assests/Lopatkin Lab_Logo-C11.png" alt="Lopatkin Lab" class="lab-logo">
+    </div>
+  </div>
+
+  <!-- Home Page -->
+  <div class="home">
+    <button class="menu-btn" onclick="toggleMenu()">☰ Menu</button>
+    <div class="menu">
+      <a href="{{ url_for('dial') }}">Virtual Mode</a>
+      <a href="{{ url_for('eeprom') }}">Board Mode</a>
+      <a href="{{ url_for('about') }}">About Us</a>
+     <div class="menu-footer">
+      <div class="powered-by-text">Powered by</div>
+    <img src="static/css/attached_assests/Lopatkin Lab_Logo-C11.png" alt="Menu Footer Logo" class="menu-footer-image">
+    </div>
+    </div>
+    <div class="dna-icons">
+      <!-- subtle background DNA for home screen -->
+      <i class="fas fa-dna dna-icon" style="left:30%; animation-duration:8s; animation-delay:1s;"></i>
+      <i class="fas fa-dna dna-icon" style="left:70%; animation-duration:7s; animation-delay:3s;"></i>
+    </div>
+    <div class="welcome-text" id="welcome-text">Welcome to MAGiC</div>
+  </div>
+
+  <script>
+    // After 6s (extended to show logo), fade out splash & show home
+    setTimeout(() => {
+      document.querySelector('.splash').classList.add('fade-out');
+      document.querySelector('.home').style.display = 'block';
+      document.body.style.backgroundColor = '#e0f2e9';
+      setTimeout(() => {
+        document.getElementById('welcome-text').style.opacity = '1';
+      }, 2000);
+    }, 6000); // Extended from 3000 to 6000 to show the logo
+
+    // Side-menu toggle
+    function toggleMenu() {
+      const menu = document.querySelector('.menu');
+      document.body.classList.toggle('menu-open');
+      menu.classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

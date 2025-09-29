@@ -1,0 +1,953 @@
+/* ============================
+   Dial Mode Specific Styles
+   ============================ */
+
+/* Lab Logo and Header Layout */
+.lab-logo {
+    position: absolute;
+    top: 1px;          /* Distance from top */
+    left: 100px;         /* Distance from left */
+    max-width: 100px;
+    height: 100px;
+    object-fit: contain;
+    z-index: 1;         /* Ensure logo stays on top */
+}
+
+/* Ensure parent can handle absolute positioning */
+.grid-container {
+    position: relative;  /* Required for absolute positioning of children */
+}
+
+/* Dial Mode Container: 2 columns (sidebar + main) */
+.text-center mb-4 {
+    text-align: center;
+    margin-bottom: 1rem;
+    margin-top: 20px;       
+}
+.dial-mode-container {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    align-items: start;
+}
+
+/* SIDEBAR: dial inputs */
+.dial-sidebar {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    z-index: 5;     
+}
+
+.dial-sidebar h2 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+/* Each parameter group's dial card */
+.dial-card {
+    background: rgba(0, 156, 77, 0.05);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dial-card h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.dial-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem 1rem;
+    align-items: center;
+}
+
+.dial-grid label {
+    font-size: 0.85rem;
+    color: var(--bs-light);
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.dial-grid input {
+    width: 80px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.85rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: calc(var(--border-radius) - 2px);
+    transition: var(--transition);
+    background: var(--bs-dark);
+    color: var(--bs-light);
+}
+
+.dial-grid input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 156, 77, 0.25);
+    background: var(--bs-dark);
+}
+
+/* MAIN AREA: stacked vertical sections */
+.dial-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+}
+
+/* Component palette in dial mode */
+.dial-main .component-palette {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dial-main .component-palette h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+.dial-main .gene-tabs {
+    display: flex;
+    background: var(--bs-secondary);
+    border-radius: var(--border-radius);
+    padding: 4px;
+    margin-bottom: 1.5rem;
+    gap: 4px;
+}
+
+.dial-main .gene-tab {
+    flex: 1;
+    padding: 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    border-radius: calc(var(--border-radius) - 4px);
+    background: transparent;
+    border: none;
+    transition: var(--transition);
+    color: var(--bs-light);
+    font-weight: 500;
+}
+
+.dial-main .gene-tab:hover {
+    background: rgba(0, 156, 77, 0.2);
+}
+
+.dial-main .gene-tab.active {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dial-main .gene-components {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.dial-main .gene-panel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.dial-main .gene-panel.active {
+    display: flex;
+}
+
+/* Larger component blocks for dial mode: 100x60px */
+.dial-main .component {
+    width: 100px;
+    height: 60px;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    cursor: grab;
+    color: white;
+    transition: var(--transition);
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.dial-main .component:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dial-main .component .strength-menu {
+    display: visible;
+}
+
+/* Design board with enhanced styling for dial mode */
+.dial-main .cell-board {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dial-main .cell-board h2 {
+    color: var(--primary);
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+.dial-main .grid-container{
+    width: 110%;
+    max-width: 700px;
+    margin: 0 auto;
+    border: 3px solid var(--primary);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background: var(--bs-dark);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 50px;
+    position: relative ;
+}       
+.dial-main .grid-container::after {
+    content: '';
+    position: absolute;
+    top: calc(1 * (calc(var(--cell-size) * 0.6) + 1px) + 155px); /* Start after 1 row */
+    left: calc(1 * (var(--cell-size) + 4px) + 65px); /* Start after 1 column */
+    width: calc(8 * (var(--cell-size) + 19px) - 4px); /* Width of 8 cells */
+    height: calc(8 * (calc(var(--cell-size) * 0.6) + 44px) - 10px); /* Height of 8 rows */
+    border: 4px solid #E91E63; /* Pink border */
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 15;
+}
+.dial-main .grid-row {
+    display: flex;
+    margin-left: 8px;
+}
+.cell.functional {
+  cursor: crosshair;
+}
+.cell.functional:hover {
+  background: rgba(0, 156, 77, 0.2);
+  border-color: var(--primary);
+}
+/* locked (non-interactive) frame */
+.cell.locked {
+  pointer-events: none;          /* ignore clicks/drag */
+  cursor: not-allowed;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.15);
+  opacity: .45;
+}
+.dial-main .cell {
+    width: 50px;
+    height: 50px;
+    border: 3px solid green;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    position: relative;
+    transition: var(--transition);
+    background: var(--bs-secondary);
+    cursor: crosshair;
+    margin-right: 8px; /* Horizontal overlap */
+    margin-bottom: 8px; /* Add vertical spacing */
+    margin-top: 8px; /* Add vertical spacing */
+    
+
+  
+}
+
+.dial-main .cell.functional:hover {
+    background: rgba(0, 156, 77, 0.2);
+    border-color: var(--primary);
+}
+
+/* Simulation Results for dial mode */
+.dial-main .results {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dial-main .results h2 {
+    color: var(--primary);
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+/* Parameter input styling improvements */
+.dial-grid input[type="number"] {
+    text-align: right;
+    font-weight: 500;
+}
+
+.dial-grid input[type="number"]::-webkit-outer-spin-button,
+.dial-grid input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.dial-grid input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Enhanced card styling for parameter groups */
+.dial-card:hover {
+    border-color: rgba(0, 156, 77, 0.3);
+    background: rgba(0, 156, 77, 0.08);
+}
+
+/* Form styling for dial mode */
+#dial-form {
+    margin: 0;
+}
+
+/* Responsive adjustments for dial mode */
+@media (max-width: 1200px) {
+    .dial-mode-container {
+        grid-template-columns: 280px 1fr;
+    }
+    
+    .dial-sidebar {
+        padding: 1rem;
+    }
+    
+    .dial-grid input {
+        width: 70px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .dial-mode-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .dial-sidebar {
+        position: static;
+        max-height: none;
+        order: 2;
+    }
+    
+    .dial-main {
+        order: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .dial-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        text-align: left;
+    }
+    
+    .dial-grid input {
+        width: 100%;
+        text-align: left;
+    }
+    
+    .dial-main .component {
+        width: 80px;
+        height: 50px;
+        font-size: 0.75rem;
+    }
+    
+    .dial-main .cell {
+        width: 35px;
+        height: 35px;
+        font-size: 0.6rem;
+    }
+}
+
+/* Scrollbar styling for sidebar */
+.dial-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dial-sidebar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.dial-sidebar::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.dial-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+/* Enhanced visual feedback for parameter changes */
+.dial-grid input:focus {
+    transform: scale(1.05);
+}
+
+.dial-card {
+    transition: var(--transition);
+}
+
+/* Special styling for important parameters */
+.dial-card:first-child {
+    border-color: var(--primary);
+    border-width: 2px;
+}
+
+.dial-card:first-child h3 {
+    color: var(--primary);
+    font-weight: 700;
+}
+.dial-main .component-palette,
+.dial-main .cell-board,
+.dial-main .results {
+  position: relative;
+  z-index: 1;           
+}
+
+.dial-main .grid-containerss {
+  overflow: hidden;     
+  contain: paint;       
+}
+
+.dial-main .component-palette { z-index: 2; }
+
+/* ============================
+   Ontology Analysis Styles
+   ============================ */
+
+.ontology-analysis {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ontology-analysis h2 {
+    color: var(--primary);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+.analysis-card {
+    background: rgba(0, 156, 77, 0.05);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    height: 100%;
+    transition: var(--transition);
+}
+
+.analysis-card:hover {
+    border-color: rgba(0, 156, 77, 0.3);
+    background: rgba(0, 156, 77, 0.08);
+}
+
+.analysis-card h3,
+.analysis-card h4 {
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+/* Status Grid Overview */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--bs-border-color);
+}
+
+.status-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.status-icon.valid {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.status-icon.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-icon.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.status-icon.regulatory {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.status-content {
+    flex: 1;
+}
+
+.status-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--bs-light);
+    line-height: 1;
+}
+
+.status-label {
+    font-size: 0.85rem;
+    color: var(--bs-light);
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+/* Circuit and Component Lists */
+.circuit-list,
+.regulation-list,
+.regulator-list,
+.issues-list,
+.extras-list,
+.component-analysis {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.circuit-item,
+.regulation-item,
+.regulator-item,
+.issue-item,
+.extra-item,
+.component-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--bs-border-color);
+    border-radius: calc(var(--border-radius) - 2px);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: var(--transition);
+}
+
+.circuit-item:hover,
+.regulation-item:hover,
+.regulator-item:hover,
+.issue-item:hover,
+.extra-item:hover,
+.component-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary);
+}
+
+.circuit-item h5,
+.regulation-item h5,
+.issue-item h5,
+.extra-item h5,
+.component-item h5 {
+    color: var(--primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.circuit-meta,
+.regulation-meta,
+.issue-meta,
+.extra-meta,
+.component-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--bs-light);
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+}
+
+.circuit-meta span,
+.regulation-meta span,
+.issue-meta span,
+.extra-meta span,
+.component-meta span {
+    background: rgba(0, 156, 77, 0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.circuit-description,
+.regulation-description,
+.issue-description,
+.extra-description,
+.component-description {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--bs-light);
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--bs-light);
+    opacity: 0.6;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Incomplete Circuits and Unpaired Regulators */
+.circuit-item.incomplete {
+    border-left: 4px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.regulator-item.unpaired {
+    border-left: 4px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.fallback-details {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid #f59e0b;
+}
+
+.fallback-details h6 {
+    color: #f59e0b;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.fallback-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.missing-part {
+    display: inline-block;
+    background: rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 0.25rem;
+}
+
+.regulator-issue, .regulator-hint {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.regulator-issue {
+    color: #ef4444;
+}
+
+.regulator-hint {
+    color: #22c55e;
+}
+
+/* Component Type Badges */
+.component-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 4px;
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.component-badge.promoter {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.component-badge.rbs {
+    background: rgba(255, 209, 102, 0.2);
+    color: #ffd166;
+}
+
+.component-badge.cds {
+    background: rgba(6, 214, 160, 0.2);
+    color: #06d6a0;
+}
+
+.component-badge.terminator {
+    background: rgba(78, 205, 196, 0.2);
+    color: #4ecdc4;
+}
+
+.component-badge.regulator {
+    background: rgba(168, 139, 250, 0.2);
+    color: #a78bfa;
+}
+
+/* Issue Severity Indicators */
+.issue-severity {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+}
+
+.issue-severity.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.issue-severity.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.issue-severity.info {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+/* Scrollbar Styling */
+.circuit-list::-webkit-scrollbar,
+.regulation-list::-webkit-scrollbar,
+.issues-list::-webkit-scrollbar,
+.extras-list::-webkit-scrollbar,
+.component-analysis::-webkit-scrollbar {
+    width: 6px;
+}
+
+.circuit-list::-webkit-scrollbar-track,
+.regulation-list::-webkit-scrollbar-track,
+.issues-list::-webkit-scrollbar-track,
+.extras-list::-webkit-scrollbar-track,
+.component-analysis::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.circuit-list::-webkit-scrollbar-thumb,
+.regulation-list::-webkit-scrollbar-thumb,
+.issues-list::-webkit-scrollbar-thumb,
+.extras-list::-webkit-scrollbar-thumb,
+.component-analysis::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+/* Responsive Design for Ontology Analysis */
+@media (max-width: 768px) {
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .status-item {
+        padding: 0.75rem;
+    }
+    
+    .status-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .status-number {
+        font-size: 1.25rem;
+    }
+    
+    .analysis-card {
+        padding: 1rem;
+    }
+    
+    .circuit-list,
+    .regulation-list,
+    .issues-list,
+    .extras-list,
+    .component-analysis {
+        max-height: 200px;
+    }
+}
+/* Card styling for consistency */
+.card {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: rgba(0, 156, 77, 0.1);
+    border-bottom: 1px solid var(--bs-border-color);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.card-body {
+    color: var(--bs-light);
+}
+
+/* Form controls */
+.form-control {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-light);
+}
+
+.form-control:focus {
+    background: var(--bs-dark);
+    border-color: var(--primary);
+    color: var(--bs-light);
+    box-shadow: 0 0 0 0.2rem rgba(0, 156, 77, 0.25);
+}
+
+.form-select {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-light);
+}
+
+.form-select:focus {
+    background: var(--bs-dark);
+    border-color: var(--primary);
+    color: var(--bs-light);
+    box-shadow: 0 0 0 0.2rem rgba(0, 156, 77, 0.25);
+}
+
+/* Strength Menu */
+
+.dial-main .component .strength-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    padding: 0.5rem;
+}
+
+
+.dial-main .component .strength-option {
+    padding: 0.5rem;
+    border-radius: calc(var(--border-radius) - 2px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    color: var(--bs-light);
+}
+
+
+.dial-main .component .strength-option:hover {
+    background: var(--bs-secondary);
+}
+
+
+.dial-main .component  .strength-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cell-board-header {
+  text-align: center;
+  margin-left: 90px;
+}
+.cell-board-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  margin: 0;
+  line-height: 1.1;
+}
+/* Individual letter colors matching the physical board */
+/* Coral */
+.letter-c { color: #4A90E2; }       /* Blue */
+.letter-e1 { color: #7ED321; }      /* Green */
+.letter-l2 { color: #7ED321; }      /* Green */
+.letter-l3 { color: #7ED321; }      /* Green */
+.letter-b { color: #E85A4F; }       /* Coral */
+.letter-o { color: #F5A623; }       /* Orange */
+.letter-a { color: #D0021B; }       /* Red */
+.letter-r { color: #50E3C2; }       /* Mint */
+.letter-d { color: #9013FE; }       /* Purple */
+.letter-mini { 
+  color: #4A90E2; 
+  font-size: 0.6em;
+  vertical-align: super;
+}
+.lab-subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  margin-top: 10px;
+  font-weight: 300;
+}
