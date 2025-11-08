@@ -28,7 +28,7 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dial') }}">
-                <i class="fas fa-dna me-2"></i>Genetic Circuit Designer
+                MAGiC
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link active" href="{{ url_for('dial') }}">Virtual Mode</a>
@@ -40,156 +40,169 @@
 
     <div class="container">
         <!-- Header -->
-        <center><h1  class="text-center mb-4">
+        <header class="page-header text-center mb-4">
             <h1>Virtual Mode</h1>
             <p class="lead">Fine-tune circuit parameters for advanced simulation</p>
-        </h1></center>
+        </header>
 
         <!-- Dial Mode Layout -->
         <div class="dial-mode-container">
             <!-- Sidebar: Parameter Controls -->
             <div class="dial-sidebar">
-                <h2><i class="fas fa-cogs me-2"></i>Circuit Parameters</h2>
-                
-                <form id="dial-form">
-                    <!-- Global Parameters -->
-                    <div class="dial-card">
-                        <h3>Global Parameters</h3>
-                        <div class="dial-grid">
-                            <label for="global_transcription_rate">Transcription Rate:</label>
-                            <input type="number" id="global_transcription_rate" name="global_transcription_rate" 
-                                   min="0.1" max="3.0" step="0.1" value="1.0">
-                                   
-                            <label for="global_translation_rate">Translation Rate:</label>
-                            <input type="number" id="global_translation_rate" name="global_translation_rate" 
-                                   min="0.1" max="3.0" step="0.1" value="1.0">
-                                   
-                            <label for="global_degradation_rate">Degradation Rate:</label>
-                            <input type="number" id="global_degradation_rate" name="global_degradation_rate" 
-                                   min="0.1" max="3.0" step="0.1" value="1.0">
-                                   
-                            <label for="temperature_factor">Temperature:</label>
-                            <input type="number" id="temperature_factor" name="temperature_factor" 
-                                   min="0.5" max="2.0" step="0.1" value="1.0">
-                                   
-                            <label for="resource_availability">Resources:</label>
-                            <input type="number" id="resource_availability" name="resource_availability" 
-                                   min="0.1" max="2.0" step="0.1" value="1.0">
-                        </div>
-                    </div>
+                <h2>Circuit Parameters</h2>
 
-                    <!-- Gene 1 Parameters -->
-                    <div class="dial-card">
-                        <h3>Gene 1 Components</h3>
-                        <div class="dial-grid">
-                            <label for="promoter1_strength">Promoter Strength:</label>
-                            <input type="number" id="promoter1_strength" name="promoter1_strength" 
-                                   min="0.1" max="5.0" step="0.1" value="1.0">
-                                   
-                            <label for="rbs1_efficiency">RBS Efficiency:</label>
-                            <input type="number" id="rbs1_efficiency" name="rbs1_efficiency" 
-                                   min="0.1" max="2.0" step="0.1" value="1.0">
-                                   
-                            <label for="cds1_translation_rate">CDS Translation Rate:</label>
-                            <input type="number" id="cds1_translation_rate" name="cds1_translation_rate" 
-                                   min="1.0" max="20.0" step="0.5" value="5.0">
-                                   
-                            <label for="cds1_degradation_rate">CDS Degradation Rate:</label>
-                            <input type="number" id="cds1_degradation_rate" name="cds1_degradation_rate" 
-                                   min="0.01" max="1.0" step="0.01" value="0.1">
-                                   
-                            <label for="terminator1_efficiency">Terminator Eff:</label>
-                            <input type="number" id="terminator1_efficiency" name="terminator1_efficiency" 
-                                   min="0.1" max="1.0" step="0.01" value="0.99">
-                                   
-                            <label for="protein1_initial_conc">Initial Protein Conc:</label>
-                            <input type="number" id="protein1_initial_conc" name="protein1_initial_conc" 
-                                   min="0.0" max="2.0" step="0.05" value="1.0" title="Starting concentration (µM) - affects oscillation dynamics">
-                        </div>
-                    </div>
+                <div class="dial-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="enable_dial_params" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="enable_dial_params" class="toggle-label">Apply circuit parameter overrides</label>
+                </div>
 
-                    <!-- Gene 2 Parameters -->
-                    <div class="dial-card">
-                        <h3>Gene 2 Components</h3>
-                        <div class="dial-grid">
-                            <label for="promoter2_strength">Promoter Strength:</label>
-                            <input type="number" id="promoter2_strength" name="promoter2_strength" 
-                                   min="0.1" max="5.0" step="0.1" value="1.0">
-                                   
-                            <label for="rbs2_efficiency">RBS Efficiency:</label>
-                            <input type="number" id="rbs2_efficiency" name="rbs2_efficiency" 
-                                   min="0.1" max="2.0" step="0.1" value="1.0">
-                                   
-                            <label for="cds2_translation_rate">CDS Translation Rate:</label>
-                            <input type="number" id="cds2_translation_rate" name="cds2_translation_rate" 
-                                   min="1.0" max="20.0" step="0.5" value="5.0">
-                                   
-                            <label for="cds2_degradation_rate">CDS Degradation Rate:</label>
-                            <input type="number" id="cds2_degradation_rate" name="cds2_degradation_rate" 
-                                   min="0.01" max="1.0" step="0.01" value="0.1">
-                                   
-                            <label for="terminator2_efficiency">Terminator Eff:</label>
-                            <input type="number" id="terminator2_efficiency" name="terminator2_efficiency" 
-                                   min="0.1" max="1.0" step="0.01" value="0.99">
-                                   
-                            <label for="protein2_initial_conc">Initial Protein Conc:</label>
-                            <input type="number" id="protein2_initial_conc" name="protein2_initial_conc" 
-                                   min="0.0" max="2.0" step="0.05" value="0.1" title="Starting concentration (µM) - affects oscillation dynamics">
-                        </div>
-                    </div>
+          <form id="dial-form">
+              <div class="dial-accordion">
+               <details class="dial-accordion-item" open>
+                <summary class="dial-accordion-header">Global Parameters</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="global_transcription_rate">Transcription Rate:</label>
+                     <input type="number" id="global_transcription_rate" name="global_transcription_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
 
-                    <!-- Gene 3 Parameters -->
-                    <div class="dial-card">
-                        <h3>Gene 3 Components</h3>
-                        <div class="dial-grid">
-                            <label for="promoter3_strength">Promoter Strength:</label>
-                            <input type="number" id="promoter3_strength" name="promoter3_strength" 
-                                   min="0.1" max="5.0" step="0.1" value="1.0">
-                                   
-                            <label for="rbs3_efficiency">RBS Efficiency:</label>
-                            <input type="number" id="rbs3_efficiency" name="rbs3_efficiency" 
-                                   min="0.1" max="2.0" step="0.1" value="1.0">
-                                   
-                            <label for="cds3_translation_rate">CDS Translation Rate:</label>
-                            <input type="number" id="cds3_translation_rate" name="cds3_translation_rate" 
-                                   min="1.0" max="20.0" step="0.5" value="5.0">
-                                   
-                            <label for="cds3_degradation_rate">CDS Degradation Rate:</label>
-                            <input type="number" id="cds3_degradation_rate" name="cds3_degradation_rate" 
-                                   min="0.01" max="1.0" step="0.01" value="0.1">
-                                   
-                            <label for="terminator3_efficiency">Terminator Eff:</label>
-                            <input type="number" id="terminator3_efficiency" name="terminator3_efficiency" 
-                                   min="0.1" max="1.0" step="0.01" value="0.99">
-                                   
-                            <label for="protein3_initial_conc">Initial Protein Conc:</label>
-                            <input type="number" id="protein3_initial_conc" name="protein3_initial_conc" 
-                                   min="0.0" max="2.0" step="0.05" value="0.05" title="Starting concentration (µM) - affects oscillation dynamics">
-                        </div>
-                    </div>
+                     <label for="global_translation_rate">Translation Rate:</label>
+                     <input type="number" id="global_translation_rate" name="global_translation_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
 
-                    <!-- Regulatory Parameters -->
-                    <div class="dial-card">
-                        <h3>Regulatory Elements</h3>
-                        <div class="dial-grid">
-                            <label for="repressor_strength">Repressor Strength:</label>
-                            <input type="number" id="repressor_strength" name="repressor_strength" 
-                                   min="0.1" max="5.0" step="0.1" value="2.0">
-                                   
-                            <label for="activator_strength">Activator Strength:</label>
-                            <input type="number" id="activator_strength" name="activator_strength" 
-                                   min="0.1" max="5.0" step="0.1" value="3.0">
-                                   
-                            <label for="binding_affinity">Binding Affinity:</label>
-                            <input type="number" id="binding_affinity" name="binding_affinity" 
-                                   min="0.01" max="1.0" step="0.01" value="0.1">
-                                   
-                            <label for="cooperativity">Cooperativity:</label>
-                            <input type="number" id="cooperativity" name="cooperativity" 
-                                   min="0.5" max="3.0" step="0.1" value="2.0">
-                        </div>
+                     <label for="global_degradation_rate">Degradation Rate:</label>
+                     <input type="number" id="global_degradation_rate" name="global_degradation_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="temperature_factor">Temperature:</label>
+                     <input type="number" id="temperature_factor" name="temperature_factor" 
+                         min="0.5" max="2.0" step="0.1" value="1.0">
+
+                     <label for="resource_availability">Resources:</label>
+                     <input type="number" id="resource_availability" name="resource_availability" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
                     </div>
-                </form>
+                </div>
+               </details>
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Regulatory Elements</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="repressor_strength">Repressor Strength:</label>
+                     <input type="number" id="repressor_strength" name="repressor_strength" 
+                         min="0.1" max="5.0" step="0.1" value="2.0">
+
+                     <label for="activator_strength">Activator Strength:</label>
+                     <input type="number" id="activator_strength" name="activator_strength" 
+                         min="0.1" max="5.0" step="0.1" value="3.0">
+
+                     <label for="binding_affinity">Binding Affinity:</label>
+                     <input type="number" id="binding_affinity" name="binding_affinity" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="cooperativity">Cooperativity:</label>
+                     <input type="number" id="cooperativity" name="cooperativity" 
+                         min="0.5" max="3.0" step="0.1" value="2.0">
+                    </div>
+                </div>
+               </details>
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Gene 1 Components</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="promoter1_strength">Promoter Strength:</label>
+                     <input type="number" id="promoter1_strength" name="promoter1_strength" 
+                         min="0.1" max="5.0" step="0.1" value="1.0">
+
+                     <label for="rbs1_efficiency">RBS Efficiency:</label>
+                     <input type="number" id="rbs1_efficiency" name="rbs1_efficiency" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+
+                     <label for="cds1_translation_rate">CDS Translation Rate:</label>
+                     <input type="number" id="cds1_translation_rate" name="cds1_translation_rate" 
+                         min="1.0" max="20.0" step="0.5" value="5.0">
+
+                     <label for="cds1_degradation_rate">CDS Degradation Rate:</label>
+                     <input type="number" id="cds1_degradation_rate" name="cds1_degradation_rate" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="terminator1_efficiency">Terminator Eff:</label>
+                     <input type="number" id="terminator1_efficiency" name="terminator1_efficiency" 
+                         min="0.1" max="1.0" step="0.01" value="0.99">
+
+                     <label for="protein1_initial_conc">Initial Protein Conc:</label>
+                     <input type="number" id="protein1_initial_conc" name="protein1_initial_conc" 
+                         min="0.0" max="2.0" step="0.05" value="1.0" title="Starting concentration (µM) - affects oscillation dynamics">
+                    </div>
+                </div>
+               </details>
+
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Gene 2 Components</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="promoter2_strength">Promoter Strength:</label>
+                     <input type="number" id="promoter2_strength" name="promoter2_strength" 
+                         min="0.1" max="5.0" step="0.1" value="1.0">
+
+                     <label for="rbs2_efficiency">RBS Efficiency:</label>
+                     <input type="number" id="rbs2_efficiency" name="rbs2_efficiency" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+
+                     <label for="cds2_translation_rate">CDS Translation Rate:</label>
+                     <input type="number" id="cds2_translation_rate" name="cds2_translation_rate" 
+                         min="1.0" max="20.0" step="0.5" value="5.0">
+
+                     <label for="cds2_degradation_rate">CDS Degradation Rate:</label>
+                     <input type="number" id="cds2_degradation_rate" name="cds2_degradation_rate" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="terminator2_efficiency">Terminator Eff:</label>
+                     <input type="number" id="terminator2_efficiency" name="terminator2_efficiency" 
+                         min="0.1" max="1.0" step="0.01" value="0.99">
+
+                     <label for="protein2_initial_conc">Initial Protein Conc:</label>
+                     <input type="number" id="protein2_initial_conc" name="protein2_initial_conc" 
+                         min="0.0" max="2.0" step="0.05" value="0.1" title="Starting concentration (µM) - affects oscillation dynamics">
+                    </div>
+                </div>
+               </details>
+
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Gene 3 Components</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="promoter3_strength">Promoter Strength:</label>
+                     <input type="number" id="promoter3_strength" name="promoter3_strength" 
+                         min="0.1" max="5.0" step="0.1" value="1.0">
+
+                     <label for="rbs3_efficiency">RBS Efficiency:</label>
+                     <input type="number" id="rbs3_efficiency" name="rbs3_efficiency" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+
+                     <label for="cds3_translation_rate">CDS Translation Rate:</label>
+                     <input type="number" id="cds3_translation_rate" name="cds3_translation_rate" 
+                         min="1.0" max="20.0" step="0.5" value="5.0">
+
+                     <label for="cds3_degradation_rate">CDS Degradation Rate:</label>
+                     <input type="number" id="cds3_degradation_rate" name="cds3_degradation_rate" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="terminator3_efficiency">Terminator Eff:</label>
+                     <input type="number" id="terminator3_efficiency" name="terminator3_efficiency" 
+                         min="0.1" max="1.0" step="0.01" value="0.99">
+
+                     <label for="protein3_initial_conc">Initial Protein Conc:</label>
+                     <input type="number" id="protein3_initial_conc" name="protein3_initial_conc" 
+                         min="0.0" max="2.0" step="0.05" value="0.05" title="Starting concentration (µM) - affects oscillation dynamics">
+                    </div>
+                </div>
+               </details>
+              </div>
+          </form>
             </div>
 
             <!-- Main Area -->
@@ -199,17 +212,23 @@
                     <h2>Genetic Components</h2>
                     
                     <!-- Gene Tabs -->
-                <div class="gene-tabs">
-                    <button class="gene-tab active" data-gene="1">Gene 1</button>
-                    <button class="gene-tab" data-gene="2">Gene 2</button>
-                    <button class="gene-tab" data-gene="3">Gene 3</button>
-                </div>
+                    <div class="gene-tabs-wrapper d-flex align-items-center">
+                        <div class="gene-tabs flex-grow-1 d-flex align-items-center" id="gene-tabs">
+                            <button type="button" class="gene-tab active btn btn-sm btn-dark me-1" data-gene="1" role="tab" aria-selected="true">Gene 1</button>
+                            <button type="button" class="gene-tab btn btn-sm btn-dark me-1" data-gene="2" role="tab" aria-selected="false">Gene 2</button>
+                            <button type="button" class="gene-tab btn btn-sm btn-dark me-1" data-gene="3" role="tab" aria-selected="false">Gene 3</button>
+                        </div>
+                        <div class="gene-controls d-flex flex-column align-items-center ms-2">
+                            <button type="button" id="remove-gene-btn" class="btn btn-outline-danger btn-sm mb-2" title="Remove gene">−</button>
+                            <button type="button" id="add-gene-btn" class="btn btn-outline-success btn-sm" title="Add gene">+</button>
+                        </div>
+                    </div>
 
                 <!-- Gene Components -->
-                <div class="gene-components">
+                <div class="gene-components" id="gene-components">
                     <!-- Gene 1 Panel -->
                     <div class="gene-panel active" data-gene="1">
-                        <div class="component" data-component="Promoter" data-gene="1" draggable="true">
+                        <div class="component" data-component="Promoter" data-gene="1" draggable="true"  data-tooltip="Place at the start of the operon to begin transcription." ...>
                             <div class="component-name">Promoter</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -217,7 +236,7 @@
                                     Weak
                                 </div>
                                 <div class="strength-option" data-strength="norm">
-                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    <div class="strength-indicator" style="background-color: #ec2a7b;"></div>
                                     Normal
                                 </div>
                                 <div class="strength-option" data-strength="strong">
@@ -227,7 +246,7 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="RBS" data-gene="1" draggable="true">
+                        <div class="component" data-component="RBS" data-gene="1" draggable="true" data-tooltip="Position just before each CDS to start translation, often follows a promoter.">
                             <div class="component-name">RBS</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -245,7 +264,7 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="CDS" data-gene="1" draggable="true">
+                        <div class="component" data-component="CDS" data-gene="1" draggable="true" data-tooltip= "Add after an RBS; codes for a protein.">
                             <div class="component-name">CDS</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -263,7 +282,7 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="Terminator" data-gene="1" draggable="true">
+                        <div class="component" data-component="Terminator" data-gene="1" draggable="true" data-tooltip="Place at the end of the operon to stop transcription.">
                             <div class="component-name">Terminator</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -281,7 +300,7 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="Repressor Start" data-gene="1" draggable="true">
+                        <div class="component" data-component="Repressor Start" data-gene="1" draggable="true" data-tooltip="Add after the CDS that makes the repressor protein.">
                             <div class="component-name">Repressor Start</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -299,7 +318,7 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="Repressor End" data-gene="1" draggable="true">
+                        <div class="component" data-component="Repressor End" data-gene="1" draggable="true" data-tooltip="Place after the promoter of the CDS to be repressed.">
                             <div class="component-name">Repressor End</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -317,7 +336,7 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="Activator Start" data-gene="1" draggable="true">
+                        <div class="component" data-component="Activator Start" data-gene="1" draggable="true" data-tooltip="Add after the CDS that makes the activator protein.">
                             <div class="component-name">Activator Start</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
@@ -335,8 +354,26 @@
                             </div>
                         </div>
                         
-                        <div class="component" data-component="Activator End" data-gene="1" draggable="true">
+                        <div class="component" data-component="Activator End" data-gene="1" draggable="true" data-tooltip="Add after the CDS that makes the activator protein.">
                             <div class="component-name">Activator End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Inducer" data-gene="1" draggable="true" data-tooltip="Add to activate or modulate gene expression.">
+                            <div class="component-name">Inducer</div>
                             <div class="strength-menu">
                                 <div class="strength-option" data-strength="weak">
                                     <div class="strength-indicator" style="background-color: #fca5a5;"></div>
@@ -499,6 +536,24 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="component" data-component="Inducer" data-gene="2" draggable="true" data-tooltip="Add to activate or modulate gene expression.">
+                            <div class="component-name">Inducer</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Gene 3 Panel -->
@@ -646,13 +701,31 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="component" data-component="Inducer" data-gene="3" draggable="true" data-tooltip="Add to activate or modulate gene expression.">
+                            <div class="component-name">Inducer</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
                 <!-- Design Board -->
                 <div class="cell-board">
-                    <h2><i class="fas fa-th-large me-2"></i>Design Board</h2>
+                    <h2>Design Board</h2>
                     <div class="grid-container">
                         <img src="static/css/attached_assests/weas.png" alt="Lab_Logo-C11" class="lab-logo">
                         <div class="cell-board-header">
@@ -792,24 +865,6 @@
                             <div class="cell functional" data-x="9" data-y="9"></div>
                         </div>
                     </div>
-                    <script>
-  (function lockBorderCells(){
-    const cells = document.querySelectorAll('.grid-container .cell');
-    cells.forEach(cell => {
-      const x = Number(cell.dataset.x);
-      const y = Number(cell.dataset.y);
-      // outer frame (0 or 9) is locked; inner (1..8) stays functional
-      if (x === 0 || x === 9 || y === 0 || y === 9) {
-        cell.classList.remove('functional');
-        cell.classList.add('locked');
-        cell.setAttribute('aria-disabled', 'true');
-        cell.title = 'Border cell (locked)';
-      } else {
-        cell.classList.add('functional'); // ensure inner cells are active
-      }
-    });
-  })();
-</script>
                     <!-- Controls -->
                     <div class="controls">
                         <button id="simulate-btn" class="btn btn-primary">
@@ -826,7 +881,7 @@
 
                 <!-- Results -->
                 <div class="results">
-                    <h2><i class="fas fa-chart-line me-2"></i>Enhanced Simulation Results</h2>
+                    <h2>Enhanced Simulation Results</h2>
                     <div class="error-message" id="error-display"></div>
                     <div class="plot-area" id="plot-container">
                         <div class="loading">
@@ -840,7 +895,7 @@
     </div>
     <!-- Ontology Analysis Section -->
                 <div class="ontology-analysis" id="ontology-analysis" style="display: none;">
-                    <h2><i class="fas fa-project-diagram me-2"></i>Circuit Analysis</h2>
+                    <h2></i>Circuit Analysis</h2>
                     
                     <!-- Circuit Status Overview -->
                     <div class="row mb-4">
@@ -1003,10 +1058,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery and jsPlumb for drag-to-connect functionality -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/1.7.11/jquery.jsPlumb-1.7.11-min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tooltip.js') }}"></script>
     <script>
         function resetParameters() {
             // Reset all parameter inputs to default values

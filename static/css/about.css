@@ -3,7 +3,7 @@
    ============================ */
 
 :root {
-    --primary: #009C4D;
+    --primary:  rgba(178, 243, 95);
     --secondary: #009C4D;
     --accent: #FFD166;
     --bg: var(--bs-dark);
@@ -19,7 +19,7 @@
 html, body {
     height: 100%;
     margin: 0;
-    background-color: var(--bg);
+    background-color:rgba(27, 38, 39);
     color: var(--text);
 }
 
@@ -141,8 +141,8 @@ ul li {
 
 /* Team Member Cards */
 .member {
-    background: var(--card-bg);
-    border: 1px solid var(--bs-border-color);
+    background: (32, 44, 45);
+    border: 1px solid transparent;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -186,8 +186,8 @@ ul li {
 
 /* Cards for content sections */
 .card {
-    background: var(--card-bg);
-    border: 1px solid var(--bs-border-color);
+    background: rgb(32, 44, 45);
+    border: 1px solid transparent;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     transition: var(--transition);

@@ -6,14 +6,16 @@
     <title>Cell Board - Genetic Circuit Designer</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/eeprom.css') }}" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dial') }}">
-                <i class="fas fa-dna me-2"></i>Genetic Circuit Designer
+                MAGiC
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ url_for('dial') }}">Virtual Mode</a>
@@ -26,79 +28,754 @@
     <div class="container">
         <!-- Header -->
         <header class="text-center mb-4">
-            <h1><i class="fas fa-microchip me-2"></i>Cell Board Control</h1>
+            <h1>Cell Board Control</h1>
             <p class="lead">Interface with physical genetic circuit board</p>
         </header>
 
-        <!-- Cell Board Control Panel -->
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-usb me-2"></i>Connection</h3>
+        <div class="container">
+        <!-- Header -->
+
+
+        <!-- Dial Mode Layout -->
+        <div class="dial-mode-container">
+            <!-- Combined Sidebar: Parameter Controls + Board Controls -->
+            <div class="dial-sidebar-column">
+                <!-- Parameter Controls Panel -->
+                <div class="dial-sidebar dial-sidebar-params">
+                    <h2>Circuit Parameters</h2>
+                    <div class="dial-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="enable_dial_params" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <label for="enable_dial_params" class="toggle-label">Apply circuit parameter overrides</label>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="com-port" class="form-label">COM Port:</label>
-                            <select id="com-port" class="form-select">
-                                <option value="">Select COM Port</option>
-                            </select>
-                        </div>
-                        
-                        <div class="d-flex gap-2">
-                            <button id="btn-refresh-ports" class="btn btn-secondary">
-                                <i class="fas fa-sync-alt me-2"></i>Refresh Ports
-                            </button>
-                            <button id="btn-connect" class="btn btn-primary">
-                                <i class="fas fa-plug me-2"></i>Connect
-                            </button>
-                        </div>
+
+          <form id="dial-form">
+              <div class="dial-accordion">
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Global Parameters</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="global_transcription_rate">Transcription Rate:</label>
+                     <input type="number" id="global_transcription_rate" name="global_transcription_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="global_translation_rate">Translation Rate:</label>
+                     <input type="number" id="global_translation_rate" name="global_translation_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="global_degradation_rate">Degradation Rate:</label>
+                     <input type="number" id="global_degradation_rate" name="global_degradation_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="temperature_factor">Temperature:</label>
+                     <input type="number" id="temperature_factor" name="temperature_factor" 
+                         min="0.5" max="2.0" step="0.1" value="1.0">
+
+                     <label for="resource_availability">Resources:</label>
+                     <input type="number" id="resource_availability" name="resource_availability" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
                     </div>
                 </div>
+               </details>
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Regulatory Elements</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="repressor_strength">Repressor Strength:</label>
+                     <input type="number" id="repressor_strength" name="repressor_strength" 
+                         min="0.1" max="5.0" step="0.1" value="2.0">
 
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h3><i class="fas fa-download me-2"></i>Board Reading</h3>
+                     <label for="activator_strength">Activator Strength:</label>
+                     <input type="number" id="activator_strength" name="activator_strength" 
+                         min="0.1" max="5.0" step="0.1" value="3.0">
+
+                     <label for="binding_affinity">Binding Affinity:</label>
+                     <input type="number" id="binding_affinity" name="binding_affinity" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="cooperativity">Cooperativity:</label>
+                     <input type="number" id="cooperativity" name="cooperativity" 
+                         min="0.5" max="3.0" step="0.1" value="2.0">
                     </div>
-                    <div class="card-body">
-                        <p class="text-muted">Read the current genetic circuit configuration from the physical board.</p>
-                        
-                        <div class="d-flex gap-2">
-                            <button id="btn-get-board" class="btn btn-success">
-                                <i class="fas fa-download me-2"></i>Read Circuit from Board
-                            </button>
-                            
-                            <button id="btn-diagnose-board" class="btn btn-info">
-                                <i class="fas fa-search me-2"></i>Diagnose Cell Board
-                            </button>
+                </div>
+               </details>
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Gene 1 Components</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="promoter1_strength">Promoter Strength:</label>
+                     <input type="number" id="promoter1_strength" name="promoter1_strength" 
+                         min="0.1" max="5.0" step="0.1" value="1.0">
+
+                     <label for="rbs1_efficiency">RBS Efficiency:</label>
+                     <input type="number" id="rbs1_efficiency" name="rbs1_efficiency" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+
+                     <label for="cds1_translation_rate">CDS Translation Rate:</label>
+                     <input type="number" id="cds1_translation_rate" name="cds1_translation_rate" 
+                         min="1.0" max="20.0" step="0.5" value="5.0">
+
+                     <label for="cds1_degradation_rate">CDS Degradation Rate:</label>
+                     <input type="number" id="cds1_degradation_rate" name="cds1_degradation_rate" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="terminator1_efficiency">Terminator Eff:</label>
+                     <input type="number" id="terminator1_efficiency" name="terminator1_efficiency" 
+                         min="0.1" max="1.0" step="0.01" value="0.99">
+
+                     <label for="protein1_initial_conc">Initial Protein Conc:</label>
+                     <input type="number" id="protein1_initial_conc" name="protein1_initial_conc" 
+                         min="0.0" max="2.0" step="0.05" value="1.0" title="Starting concentration (µM) - affects oscillation dynamics">
+                    </div>
+                </div>
+               </details>
+
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Gene 2 Components</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="promoter2_strength">Promoter Strength:</label>
+                     <input type="number" id="promoter2_strength" name="promoter2_strength" 
+                         min="0.1" max="5.0" step="0.1" value="1.0">
+
+                     <label for="rbs2_efficiency">RBS Efficiency:</label>
+                     <input type="number" id="rbs2_efficiency" name="rbs2_efficiency" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+
+                     <label for="cds2_translation_rate">CDS Translation Rate:</label>
+                     <input type="number" id="cds2_translation_rate" name="cds2_translation_rate" 
+                         min="1.0" max="20.0" step="0.5" value="5.0">
+
+                     <label for="cds2_degradation_rate">CDS Degradation Rate:</label>
+                     <input type="number" id="cds2_degradation_rate" name="cds2_degradation_rate" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="terminator2_efficiency">Terminator Eff:</label>
+                     <input type="number" id="terminator2_efficiency" name="terminator2_efficiency" 
+                         min="0.1" max="1.0" step="0.01" value="0.99">
+
+                     <label for="protein2_initial_conc">Initial Protein Conc:</label>
+                     <input type="number" id="protein2_initial_conc" name="protein2_initial_conc" 
+                         min="0.0" max="2.0" step="0.05" value="0.1" title="Starting concentration (µM) - affects oscillation dynamics">
+                    </div>
+                </div>
+               </details>
+
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Gene 3 Components</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="promoter3_strength">Promoter Strength:</label>
+                     <input type="number" id="promoter3_strength" name="promoter3_strength" 
+                         min="0.1" max="5.0" step="0.1" value="1.0">
+
+                     <label for="rbs3_efficiency">RBS Efficiency:</label>
+                     <input type="number" id="rbs3_efficiency" name="rbs3_efficiency" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+
+                     <label for="cds3_translation_rate">CDS Translation Rate:</label>
+                     <input type="number" id="cds3_translation_rate" name="cds3_translation_rate" 
+                         min="1.0" max="20.0" step="0.5" value="5.0">
+
+                     <label for="cds3_degradation_rate">CDS Degradation Rate:</label>
+                     <input type="number" id="cds3_degradation_rate" name="cds3_degradation_rate" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="terminator3_efficiency">Terminator Eff:</label>
+                     <input type="number" id="terminator3_efficiency" name="terminator3_efficiency" 
+                         min="0.1" max="1.0" step="0.01" value="0.99">
+
+                     <label for="protein3_initial_conc">Initial Protein Conc:</label>
+                     <input type="number" id="protein3_initial_conc" name="protein3_initial_conc" 
+                         min="0.0" max="2.0" step="0.05" value="0.05" title="Starting concentration (µM) - affects oscillation dynamics">
+                    </div>
+                </div>
+               </details>
+              </div>
+          </form>
+                </div>
+
+                <!-- Board Controls Panel -->
+                <div class="dial-sidebar dial-sidebar-board">
+                    <h2><i class="fas fa-plug me-2"></i>Board Controls</h2>
+                
+                <!-- Connection Controls -->
+                <div class="mb-3">
+                    <label for="com-port" class="form-label">Select COM Port</label>
+                    <select id="com-port" class="form-select">
+                        <option value="">Select COM Port</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2 mb-3">
+                    <button id="btn-refresh-ports" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Ports
+                    </button>
+                    <button id="btn-connect" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plug me-2"></i>Connect
+                    </button>
+                </div>
+
+                <hr style="border-color: rgba(74, 222, 128, 0.2);">
+
+                <!-- Board Reading -->
+                <p class="text-muted" style="font-size: 0.85rem;">Read the current genetic circuit configuration from the physical board.</p>
+                <div class="d-flex gap-2 mb-3">
+                    <button id="btn-get-board" class="btn btn-success btn-sm">
+                        <i class="fas fa-download me-2"></i>Read Circuit from Board
+                    </button>
+                    <button id="btn-diagnose-board" class="btn btn-info btn-sm">
+                        <i class="fas fa-search me-2"></i>Diagnose Cell Board
+                    </button>
+                </div>
+
+                <small class="text-muted d-block mb-3" style="font-size: 0.75rem;">
+                    This will scan all MUX channels and populate the design board with detected components.
+                </small>
+
+                <hr style="border-color: rgba(74, 222, 128, 0.2);">
+
+                <!-- Communication Log -->
+                <div class="mb-2">
+                    <label class="form-label" style="font-size: 0.9rem;"><i class="fas fa-terminal me-2"></i>Cell Board Communication Log</label>
+                    <textarea id="eeprom-log" class="form-control" style="height: 120px; font-family: monospace; font-size: 0.75rem;" readonly
+                              placeholder="Cell Board communication logs will appear here..."></textarea>
+                </div>
+                <div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearLogAndBoard()">
+                        <i class="fas fa-trash me-2"></i>Clear Log
+                    </button>
+                </div>
+                </div>
+            </div>
+
+            <!-- Main Area -->
+            <div class="dial-main">
+                <!-- Component Palette -->
+                <div class="component-palette">
+                    <h2>Genetic Components</h2>
+                    
+                    <!-- Gene Tabs -->
+                    <div class="gene-tabs-wrapper d-flex align-items-center">
+                        <div class="gene-tabs flex-grow-1 d-flex align-items-center" id="gene-tabs">
+                            <button type="button" class="gene-tab active btn btn-sm btn-dark me-1" data-gene="1" role="tab" aria-selected="true">Gene 1</button>
+                            <button type="button" class="gene-tab btn btn-sm btn-dark me-1" data-gene="2" role="tab" aria-selected="false">Gene 2</button>
+                            <button type="button" class="gene-tab btn btn-sm btn-dark me-1" data-gene="3" role="tab" aria-selected="false">Gene 3</button>
+                        </div>
+                        <div class="gene-controls d-flex flex-column align-items-center ms-2">
+                            <button type="button" id="remove-gene-btn" class="btn btn-outline-danger btn-sm mb-2" title="Remove gene">−</button>
+                            <button type="button" id="add-gene-btn" class="btn btn-outline-success btn-sm" title="Add gene">+</button>
+                        </div>
+                    </div>
+
+                <!-- Gene Components -->
+                <div class="gene-components" id="gene-components">
+                    <!-- Gene 1 Panel -->
+                    <div class="gene-panel active" data-gene="1">
+                        <div class="component" data-component="Promoter" data-gene="1" draggable="true"  data-tooltip="Place at the start of the operon to begin transcription." ...>
+                            <div class="component-name">Promoter</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #ec2a7b;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="mt-3">
-                            <button id="btn-transfer-designer" class="btn btn-primary" style="display: none;">
-                                <i class="fas fa-external-link-alt me-2"></i>Transfer to Main Designer
-                            </button>
+                        <div class="component" data-component="RBS" data-gene="1" draggable="true" data-tooltip="Position just before each CDS to start translation, often follows a promoter.">
+                            <div class="component-name">RBS</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="mt-3">
-                            <small class="text-muted">
-                                This will scan all MUX channels and populate the design board with detected components.
-                            </small>
+                        <div class="component" data-component="CDS" data-gene="1" draggable="true" data-tooltip= "Add after an RBS; codes for a protein.">
+                            <div class="component-name">CDS</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Terminator" data-gene="1" draggable="true" data-tooltip="Place at the end of the operon to stop transcription.">
+                            <div class="component-name">Terminator</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Repressor Start" data-gene="1" draggable="true" data-tooltip="Add after the CDS that makes the repressor protein.">
+                            <div class="component-name">Repressor Start</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Repressor End" data-gene="1" draggable="true" data-tooltip="Place after the promoter of the CDS to be repressed.">
+                            <div class="component-name">Repressor End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Activator Start" data-gene="1" draggable="true" data-tooltip="Add after the CDS that makes the activator protein.">
+                            <div class="component-name">Activator Start</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Activator End" data-gene="1" draggable="true" data-tooltip="Add after the CDS that makes the activator protein.">
+                            <div class="component-name">Activator End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Inducer" data-gene="1" draggable="true" data-tooltip="Add to activate or modulate gene expression.">
+                            <div class="component-name">Inducer</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gene 2 Panel -->
+                    <div class="gene-panel" data-gene="2">
+                        <div class="component" data-component="Promoter" data-gene="2" draggable="true">
+                            <div class="component-name">Promoter</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="RBS" data-gene="2" draggable="true">
+                            <div class="component-name">RBS</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="CDS" data-gene="2" draggable="true">
+                            <div class="component-name">CDS</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Terminator" data-gene="2" draggable="true">
+                            <div class="component-name">Terminator</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Repressor Start" data-gene="2" draggable="true">
+                            <div class="component-name">Repressor Start</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Repressor End" data-gene="2" draggable="true">
+                            <div class="component-name">Repressor End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Activator Start" data-gene="2" draggable="true">
+                            <div class="component-name">Activator Start</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Activator End" data-gene="2" draggable="true">
+                            <div class="component-name">Activator End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Inducer" data-gene="2" draggable="true" data-tooltip="Add to activate or modulate gene expression.">
+                            <div class="component-name">Inducer</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gene 3 Panel -->
+                    <div class="gene-panel" data-gene="3">
+                        <div class="component" data-component="Promoter" data-gene="3" draggable="true">
+                            <div class="component-name">Promoter</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="RBS" data-gene="3" draggable="true">
+                            <div class="component-name">RBS</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="CDS" data-gene="3" draggable="true">
+                            <div class="component-name">CDS</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Terminator" data-gene="3" draggable="true">
+                            <div class="component-name">Terminator</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Repressor Start" data-gene="3" draggable="true">
+                            <div class="component-name">Repressor Start</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Repressor End" data-gene="3" draggable="true">
+                            <div class="component-name">Repressor End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Activator Start" data-gene="3" draggable="true">
+                            <div class="component-name">Activator Start</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Activator End" data-gene="3" draggable="true">
+                            <div class="component-name">Activator End</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="component" data-component="Inducer" data-gene="3" draggable="true" data-tooltip="Add to activate or modulate gene expression.">
+                            <div class="component-name">Inducer</div>
+                            <div class="strength-menu">
+                                <div class="strength-option" data-strength="weak">
+                                    <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                    Weak
+                                </div>
+                                <div class="strength-option" data-strength="norm">
+                                    <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                    Normal
+                                </div>
+                                <div class="strength-option" data-strength="strong">
+                                    <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                    Strong
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6">
-                <!-- Design Board Preview -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-th-large me-2"></i>Board Preview</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="grid-container mx-auto"  style="width: max-content; padding: 10px; border: 3px solid var(--primary); border-radius: var(--border-radius);">
-                            <img src="static/css/attached_assests/weas.png" alt="Lab_Logo-C11" class="lab-logoss">
-                        <div class="cell-board-header1">
-                        <h1 class="cell-board-title1">
+                <!-- Design Board -->
+                <div class="cell-board">
+                    <h2>Design Board</h2>
+                    <div class="grid-container">
+                        <img src="static/css/attached_assests/weas.png" alt="Lab_Logo-C11" class="lab-logo">
+                        <div class="cell-board-header">
+                        <h1 class="cell-board-title">
                         <span class="letter-c">C</span>
                         <span class="letter-e1">e</span>
                         <span class="letter-l2">l</span>
@@ -110,10 +787,10 @@
                         <span class="letter-r">r</span>
                         <span class="letter-d">d</span>
                         </h1>
-                        <p class="lab-subtitle1">By the Lopatkin Lab</p>
+                        <p class="lab-subtitle">By the Lopatkin Lab</p>
                 </div>
-                            <!-- 8x8 Grid -->
-                             <div class="grid-row1">
+                       <!-- Generate 8x8 grid -->
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="0"></div>
                             <div class="cell functional" data-x="1" data-y="0"></div>
                             <div class="cell functional" data-x="2" data-y="0"></div>
@@ -125,7 +802,7 @@
                             <div class="cell functional" data-x="8" data-y="0"></div>
                             <div class="cell functional" data-x="9" data-y="0"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="1"></div>
                             <div class="cell functional" data-x="1" data-y="1"></div>
                             <div class="cell functional" data-x="2" data-y="1"></div>
@@ -137,7 +814,7 @@
                             <div class="cell functional" data-x="8" data-y="1"></div>
                             <div class="cell functional" data-x="9" data-y="1"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="2"></div>
                             <div class="cell functional" data-x="1" data-y="2"></div>
                             <div class="cell functional" data-x="2" data-y="2"></div>
@@ -149,7 +826,7 @@
                             <div class="cell functional" data-x="8" data-y="2"></div>
                             <div class="cell functional" data-x="9" data-y="2"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="3"></div>
                             <div class="cell functional" data-x="1" data-y="3"></div>
                             <div class="cell functional" data-x="2" data-y="3"></div>
@@ -161,7 +838,7 @@
                             <div class="cell functional" data-x="8" data-y="3"></div>
                             <div class="cell functional" data-x="9" data-y="3"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="4"></div>
                             <div class="cell functional" data-x="1" data-y="4"></div>
                             <div class="cell functional" data-x="2" data-y="4"></div>
@@ -173,7 +850,7 @@
                             <div class="cell functional" data-x="8" data-y="4"></div>
                             <div class="cell functional" data-x="9" data-y="4"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="5"></div>
                             <div class="cell functional" data-x="1" data-y="5"></div>
                             <div class="cell functional" data-x="2" data-y="5"></div>
@@ -185,7 +862,7 @@
                             <div class="cell functional" data-x="8" data-y="5"></div>
                             <div class="cell functional" data-x="9" data-y="5"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="6"></div>
                             <div class="cell functional" data-x="1" data-y="6"></div>
                             <div class="cell functional" data-x="2" data-y="6"></div>
@@ -197,7 +874,7 @@
                             <div class="cell functional" data-x="8" data-y="6"></div>
                             <div class="cell functional" data-x="9" data-y="6"></div>
                         </div>
-                        <div class="grid-row1">
+                        <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="7"></div>
                             <div class="cell functional" data-x="1" data-y="7"></div>
                             <div class="cell functional" data-x="2" data-y="7"></div>
@@ -209,7 +886,7 @@
                             <div class="cell functional" data-x="8" data-y="7"></div>
                             <div class="cell functional" data-x="9" data-y="7"></div>
                         </div>
-                         <div class="grid-row1">
+                         <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="8"></div>
                             <div class="cell functional" data-x="1" data-y="8"></div>
                             <div class="cell functional" data-x="2" data-y="8"></div>
@@ -221,7 +898,7 @@
                             <div class="cell functional" data-x="8" data-y="8"></div>
                             <div class="cell functional" data-x="9" data-y="8"></div>
                         </div>
-                         <div class="grid-row1">
+                         <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="9"></div>
                             <div class="cell functional" data-x="1" data-y="9"></div>
                             <div class="cell functional" data-x="2" data-y="9"></div>
@@ -234,18 +911,25 @@
                             <div class="cell functional" data-x="9" data-y="9"></div>
                         </div>
                     </div>
-                        
-                        <div class="mt-3 text-center">
-                            <button class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('dial') }}'">
-                                <i class="fas fa-arrow-right me-2"></i>Go to Designer
-                            </button>
-                        </div>
+                    <!-- Controls -->
+                    <div class="controls">
+                        <button id="simulate-btn" class="btn btn-primary">
+                            <i class="fas fa-play me-2"></i>Run Enhanced Simulation
+                        </button>
+                        <button id="clear-btn" class="btn btn-secondary">
+                            <i class="fas fa-trash me-2"></i>Clear Board
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetParameters()">
+                            <i class="fas fa-undo me-2"></i>Reset Parameters
+                        </button>
                     </div>
                 </div>
-            </div>
+</div>
         </div>
+        </div>
+            </div>
 
-        <!-- Cell Board Log -->
+        <!-- Cell Board Log =
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
@@ -264,13 +948,12 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Results Display -->
+        </div> -->  
+            </div>
         <div class="row mt-4">
             <div class="col-12">
                 <div class="results">
-                    <h2><i class="fas fa-chart-line me-2"></i>Hardware Circuit Analysis</h2>
+                    <h2>Hardware Circuit Analysis</h2>
                     <div class="error-message" id="error-display"></div>
                     <div class="plot-area" id="plot-container">
                         <div class="loading">
@@ -280,8 +963,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </div>     
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/eeprom.js') }}"></script>

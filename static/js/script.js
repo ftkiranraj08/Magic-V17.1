@@ -41,14 +41,350 @@ document.addEventListener('DOMContentLoaded', function() {
         setupCells();
         setupButtons();
         setupDragAndDrop();
+        setupDialToggle();
+        setupJsPlumb();
+        setupSvgConnectors();
+        setupAddGeneButton();
+    setupRemoveGeneButton();
         
-        // Initialize with Gene 1 active
-        if (geneTabs.length > 0) {
-            geneTabs[0].click();
+        // Initialize with the first available Gene tab active (query dynamically)
+        const firstTab = document.querySelector('#gene-tabs .gene-tab');
+        if (firstTab) {
+            // dispatch a click so the delegated handler activates it
+            firstTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         }
         
         // Check for hardware circuit data and load it
         loadHardwareCircuitData();
+    }
+
+    // jsPlumb integration for connecting repressor start -> repressor end
+    function setupJsPlumb() {
+        // If jsPlumb isn't present, attempt to load it dynamically from fallbacks (CDNs/local)
+        if (typeof jsPlumb === 'undefined' && typeof window.jsPlumb === 'undefined') {
+            console.warn('jsPlumb not found — attempting dynamic load from fallbacks');
+            const fallbacks = [
+                'https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/1.7.11/jquery.jsPlumb-1.7.11-min.js',
+                'https://cdn.jsdelivr.net/gh/jsplumb/jsplumb@1.7.11/dist/js/jsplumb.min.js',
+                // local fallback (place file at static/vendor/jquery.jsPlumb-1.7.11-min.js)
+                window.location.origin + '/static/vendor/jquery.jsPlumb-1.7.11-min.js'
+            ];
+
+            function tryLoad(index) {
+                if (index >= fallbacks.length) {
+                    console.warn('All jsPlumb fallbacks failed');
+                    return Promise.resolve(false);
+                }
+                return new Promise(function(resolve) {
+                    const s = document.createElement('script');
+                    s.src = fallbacks[index];
+                    s.async = false;
+                    s.onload = function() { console.log('Loaded jsPlumb fallback:', fallbacks[index]); resolve(true); };
+                    s.onerror = function() { console.warn('Failed to load jsPlumb fallback:', fallbacks[index]); resolve(tryLoad(index + 1)); };
+                    document.head.appendChild(s);
+                });
+            }
+
+            // Try to load then re-run setup after successful load
+            tryLoad(0).then(function(success) {
+                if (success && (typeof jsPlumb !== 'undefined' || typeof window.jsPlumb !== 'undefined')) {
+                    // Small delay to ensure the library is fully initialised
+                    setTimeout(setupJsPlumb, 50);
+                } else {
+                    console.warn('jsPlumb could not be loaded; connector features will be disabled.');
+                }
+            });
+
+            return; // bail for now; will re-enter when loaded
+        }
+
+        const J = (window.jsPlumb || jsPlumb).getInstance();
+    // Render connectors into the document body to avoid being clipped by container overflow
+    try { J.setContainer(document.body); } catch (e) { /* ignore if not supported */ }
+
+        // common endpoint settings
+        const sourceEndpoint = {
+            endpoint: 'Dot',
+            paintStyle: { fill: '#a78bfa', radius: 6 },
+            isSource: true,
+            maxConnections: 1,
+            connector: ['Bezier', { curviness: 50 }],
+            connectorStyle: { stroke: '#a78bfa', strokeWidth: 3 },
+            anchors: ['Right'],
+            overlays: [
+                ['Arrow', { width: 10, length: 12, location: 1 }]
+            ]
+        };
+
+        const targetEndpoint = {
+            endpoint: 'Dot',
+            paintStyle: { fill: '#7E22CE', radius: 6 },
+            isTarget: true,
+            maxConnections: 1,
+            anchors: ['Left']
+        };
+
+        function addEndpointsForElement(el) {
+            // only attach once
+            if (el._jsplumbAttached) return;
+            el._jsplumbAttached = true;
+            // only attach for placed board nodes inside grid, not palette
+            if (!el.classList.contains('component-node')) return;
+            if (!el.closest('.grid-container')) return;
+            const compType = el.dataset.component;
+            // Only create handles/endpoints for Repressor Start and Repressor End
+            if (compType === 'Repressor Start') {
+                // create a small handle element for visual affordance (source)
+                const handle = document.createElement('div');
+                handle.className = 'connection-handle connection-source';
+                el.appendChild(handle);
+                J.addEndpoint(el, sourceEndpoint);
+            } else if (compType === 'Repressor End') {
+                // create a small handle element for visual affordance (target)
+                const tHandle = document.createElement('div');
+                tHandle.className = 'connection-handle connection-target';
+                el.appendChild(tHandle);
+                J.addEndpoint(el, targetEndpoint);
+            }
+        }
+
+    // expose single-element attach API so other code can call it when elements are updated
+    try { window.__attachJsPlumbEndpoint = addEndpointsForElement; } catch (e) { /* ignore */ }
+
+    // Attach only to placed board nodes
+    document.querySelectorAll('.component-node').forEach(addEndpointsForElement);
+
+        // Observe for dynamic additions
+        const obs = new MutationObserver(() => {
+            document.querySelectorAll('.component-node').forEach(addEndpointsForElement);
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+
+        // Handle new connections
+        J.bind('connection', function(info) {
+            // Prevent duplicate connections between the same source and target
+            try {
+                const existing = J.getConnections({ source: info.source, target: info.target }) || [];
+                // Remove all but the newest connection for this pair
+                if (existing.length > 1) {
+                    for (let i = 0; i < existing.length - 1; i++) {
+                        try { J.detach(existing[i]); } catch (e) { /* ignore detach errors */ }
+                    }
+                }
+                // Also enforce one connection per source and per target overall
+                const fromSource = J.getConnections({ source: info.source }) || [];
+                fromSource.forEach(c => { if (c !== info.connection) { try { J.detach(c); } catch (e) {} } });
+                const toTarget = J.getConnections({ target: info.target }) || [];
+                toTarget.forEach(c => { if (c !== info.connection) { try { J.detach(c); } catch (e) {} } });
+            } catch (e) {
+                // fallback: remove previous from state
+                state.placedConnections = state.placedConnections || [];
+                state.placedConnections = state.placedConnections.filter(c => !(c.source === info.source.dataset.component && c.target === info.target.dataset.component));
+            }
+
+            console.log('New connection:', info);
+            // store connection info in state or serialize to server
+            state.placedConnections = state.placedConnections || [];
+            state.placedConnections.push({ source: info.source.dataset.component, target: info.target.dataset.component, uuid: info.connection.id });
+        });
+
+        // Optional: attempt to auto-connect any existing Repressor Start -> Repressor End endpoints
+        setTimeout(() => {
+            try {
+                const starts = Array.from(document.querySelectorAll('.component-node')).filter(c => c.dataset.component === 'Repressor Start');
+                const ends = Array.from(document.querySelectorAll('.component-node')).filter(c => c.dataset.component === 'Repressor End');
+                // connect first start to first end if neither is connected
+                if (starts.length && ends.length) {
+                    const startEl = starts[0];
+                    const endEl = ends[0];
+                    // check if already connected
+                    const existing = J.getConnections({ source: startEl, target: endEl });
+                    if (!existing || existing.length === 0) {
+                        J.connect({ source: startEl, target: endEl, anchors: ['Right', 'Left'], connector: ['Bezier', { curviness: 50 }], paintStyle: { stroke: '#a78bfa', strokeWidth: 3 }, overlays: [['Arrow', { width: 10, length: 12, location: 1 }]] });
+                    }
+                }
+            } catch (e) {
+                // ignore auto-connect errors
+                console.warn('Auto-connect failed', e);
+            }
+        }, 300);
+    }
+
+    // Lightweight SVG connector fallback (used when jsPlumb is not available)
+    function setupSvgConnectors() {
+        // create an SVG overlay that covers the page
+        if (document.getElementById('svg-connector-overlay')) return; // idempotent
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('id', 'svg-connector-overlay');
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    svg.style.pointerEvents = 'none';
+    svg.style.zIndex = '9999'; // ensure overlay is always above grid
+        document.body.appendChild(svg);
+
+        let dragState = null; // {sourceEl, pathEl}
+
+        function screenCenter(el){
+            const r = el.getBoundingClientRect();
+            return { x: r.left + r.width/2 + window.scrollX, y: r.top + r.height/2 + window.scrollY };
+        }
+
+        // helper to create a visible line
+        function makeLine(x1,y1,x2,y2){
+            const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+            const d = `M ${x1} ${y1} C ${x1+40} ${y1} ${x2-40} ${y2} ${x2} ${y2}`;
+            line.setAttribute('d', d);
+            line.setAttribute('stroke', '#a78bfa');
+            line.setAttribute('stroke-width', '3');
+            line.setAttribute('fill', 'none');
+            line.classList.add('svg-connector');
+            line.style.zIndex = '9999'; // always above grid
+            svg.appendChild(line);
+            return line;
+        }
+
+        // mousemove while drawing
+        function onMove(e){
+            if (!dragState) return;
+            const p = { x: e.pageX, y: e.pageY };
+            const s = screenCenter(dragState.sourceEl);
+            const d = `M ${s.x} ${s.y} C ${s.x+40} ${s.y} ${p.x-40} ${p.y} ${p.x} ${p.y}`;
+            dragState.pathEl.setAttribute('d', d);
+        }
+
+        function onUp(e){
+            if (!dragState) return;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+
+            // detect target element under mouse
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const targetComp = el && (el.closest && el.closest('.component-node'));
+            if (targetComp && targetComp.dataset && targetComp.dataset.component === 'Repressor End' && targetComp.closest('.grid-container')) {
+                // Always remove any previous connector for this source-target pair
+                state.placedConnections = state.placedConnections || [];
+                state.placedConnections
+                    .filter(c => c.source === dragState.sourceEl || c.target === targetComp)
+                    .forEach(c => { if (c.path && c.path.parentNode) c.path.parentNode.removeChild(c.path); });
+                state.placedConnections = state.placedConnections.filter(c => !(c.source === dragState.sourceEl || c.target === targetComp));
+
+                // Draw new connector above cells
+                const s = screenCenter(dragState.sourceEl);
+                const t = screenCenter(targetComp);
+                const final = makeLine(s.x, s.y, t.x, t.y);
+                final.style.zIndex = '9999';
+                final.dataset.source = dragState.sourceEl.dataset.component || '';
+                final.dataset.target = targetComp.dataset.component || '';
+                state.placedConnections.push({ source: dragState.sourceEl, target: targetComp, path: final });
+            } else {
+                // remove temp path
+                if (dragState.pathEl && dragState.pathEl.parentNode) dragState.pathEl.parentNode.removeChild(dragState.pathEl);
+            }
+
+            dragState = null;
+        }
+
+        // attach pointerdown to connection handles (existing elements have .connection-handle or we create them)
+        function attachToElement(el){
+            if (el._svgConnectorAttached) return;
+            el._svgConnectorAttached = true;
+
+            // Only attach visible handles for repressor components
+            // Only attach on placed board nodes inside grid
+            if (!el.classList || !el.classList.contains('component-node')) return;
+            if (!el.closest('.grid-container')) return;
+            const compType = el.dataset && el.dataset.component;
+            if (compType === 'Repressor Start') {
+                // ensure there's a visible handle for the source (right side)
+                let handle = el.querySelector('.connection-handle');
+                if (!handle) {
+                    handle = document.createElement('div');
+                    handle.className = 'connection-handle connection-source';
+                    el.appendChild(handle);
+                }
+
+                handle.style.pointerEvents = 'auto';
+                handle.addEventListener('pointerdown', function(ev){
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    // only start if this is a Repressor Start (defensive)
+                    if (!el.dataset || el.dataset.component !== 'Repressor Start') return;
+                    dragState = { sourceEl: el, pathEl: makeLine(0,0,0,0) };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                });
+            } else if (compType === 'Repressor End') {
+                // ensure there's a visible handle for the target (visual only)
+                let tHandle = el.querySelector('.connection-handle');
+                if (!tHandle) {
+                    tHandle = document.createElement('div');
+                    tHandle.className = 'connection-handle connection-target';
+                    el.appendChild(tHandle);
+                }
+                // target handle doesn't start drags; just allow pointer events so it can be styled
+                tHandle.style.pointerEvents = 'auto';
+            }
+        }
+
+        // allow programmatic start of a drag from code elsewhere
+        function startDragOnElement(el) {
+            if (!el || !el.dataset || el.dataset.component !== 'Repressor Start') return;
+            dragState = { sourceEl: el, pathEl: makeLine(0,0,0,0) };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+
+    // expose API for attaching svg handles to a single element
+    try { window.__attachSvgHandle = attachToElement; } catch (e) { /* ignore */ }
+
+        // initial attach only to placed board nodes
+        document.querySelectorAll('.component-node').forEach(attachToElement);
+
+        // watch for dynamic additions
+        const obs = new MutationObserver((mutList) => {
+            mutList.forEach(m => {
+                if (m.addedNodes && m.addedNodes.length) {
+                    m.addedNodes.forEach(n => {
+                        if (n.nodeType === 1) {
+                            if (n.matches && n.matches('.component-node')) attachToElement(n);
+                            n.querySelectorAll && n.querySelectorAll('.component-node').forEach(attachToElement);
+                        }
+                    });
+                }
+            });
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // Setup the dial parameters enable/disable toggle
+    function setupDialToggle() {
+        const toggle = document.getElementById('enable_dial_params');
+        const dialFormEl = document.getElementById('dial-form');
+        if (!toggle || !dialFormEl) return;
+
+        const container = dialFormEl.querySelector('.dial-accordion') || dialFormEl;
+        const numberInputs = Array.from(dialFormEl.querySelectorAll('input[type="number"]'));
+
+        const setDisabledState = (enabled) => {
+            if (enabled) {
+                container.classList.remove('dial-params-disabled');
+                numberInputs.forEach(i => i.disabled = false);
+            } else {
+                container.classList.add('dial-params-disabled');
+                numberInputs.forEach(i => i.disabled = true);
+            }
+        };
+
+        // initialize
+        setDisabledState(toggle.checked);
+
+        toggle.addEventListener('change', function() {
+            setDisabledState(this.checked);
+        });
     }
 
     // Load hardware circuit data from localStorage if available
@@ -251,7 +587,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'Repressor Start': 'Repressor Start',
             'Repressor End': 'Repressor End',
             'Activator Start': 'Activator Start',
-            'Activator End': 'Activator End'
+            'Activator End': 'Activator End',
+            'Inducer': 'Inducer'
         };
         
         try {
@@ -309,6 +646,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Hardware circuit data cleared from localStorage after successful transfer');
             }
             
+            // After placement, ensure UI reflects number of genes found
+            try {
+                const maxGene = state.placedComponents.reduce((max, c) => {
+                    const n = parseInt((c.gene || 'Gene 1').toString().split(' ')[1]) || 1;
+                    return Math.max(max, n);
+                }, 1);
+                ensureGenesUI(maxGene);
+                ensureGeneParameterSections(maxGene);
+            } catch (e) {
+                console.warn('Error ensuring dynamic gene UI:', e);
+            }
+
             return successfulPlacements;
             
         } catch (error) {
@@ -318,32 +667,269 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Gene tab functionality
-    function setupGeneTabs() {
-        geneTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Remove active from all tabs and panels
-                geneTabs.forEach(t => t.classList.remove('active'));
-                genePanels.forEach(panel => panel.classList.remove('active'));
-                
-                // Add active to clicked tab
-                this.classList.add('active');
-                
-                // Show the correct panel
-                const gene = this.dataset.gene;
-                state.currentGene = gene;
-                
-                const targetPanel = document.querySelector(`.gene-panel[data-gene="${gene}"]`);
-                if (targetPanel) {
-                    targetPanel.classList.add('active');
+    // Create or reveal gene tabs and panels up to maxGene
+    function ensureGenesUI(maxGene) {
+        const tabsContainer = document.getElementById('gene-tabs');
+        const componentsContainer = document.getElementById('gene-components');
+        if (!tabsContainer || !componentsContainer) return;
+
+        // find the template panel to clone (prefer the one with class template)
+        const templatePanel = componentsContainer.querySelector('.gene-panel.template') || componentsContainer.querySelector('.gene-panel');
+    for (let i = 1; i <= maxGene; i++) {
+            // Create tab if missing
+            if (!tabsContainer.querySelector(`.gene-tab[data-gene="${i}"]`)) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'gene-tab';
+                if (i === 1) btn.classList.add('active');
+                btn.dataset.gene = String(i);
+                btn.setAttribute('role', 'tab');
+                btn.setAttribute('aria-selected', i === 1 ? 'true' : 'false');
+                btn.textContent = `Gene ${i}`;
+                // attach a direct handler so newly-created tabs work even if delegation missed
+                btn.addEventListener('click', function(e) {
+                    activateGeneTab(this);
+                });
+                tabsContainer.appendChild(btn);
+            }
+
+            // Create panel if missing
+            if (!componentsContainer.querySelector(`.gene-panel[data-gene="${i}"]`)) {
+                if (!templatePanel) continue;
+                const clone = templatePanel.cloneNode(true);
+                clone.classList.remove('template');
+                // remove any 'active' class unless it's gene 1
+                clone.classList.toggle('active', i === 1);
+                clone.dataset.gene = String(i);
+                // update internal components' data-gene attributes
+                clone.querySelectorAll('.component').forEach(comp => {
+                    comp.dataset.gene = String(i);
+                    // update inner markup if any references to gene present (not common)
+                });
+                componentsContainer.appendChild(clone);
+            }
+        }
+
+        // Re-attach gene tab handlers
+        setupGeneTabs();
+        // Re-attach component handlers for any newly cloned components
+        setupComponents();
+        // Update tab density (compact mode) when many genes exist
+        updateGeneTabDensity();
+    }
+
+    // Helper to activate a gene tab element
+    function activateGeneTab(tab) {
+        if (!tab) return;
+        // Deactivate all tabs and panels (also unset aria-selected)
+            deactivateAllTabsAndPanels();
+            activateTargetTab(tab);
+        }
+
+        function deactivateAllTabsAndPanels() {
+            document.querySelectorAll('.gene-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.gene-panel').forEach(p => p.classList.remove('active'));
+        }
+
+        function activateTargetTab(tab) {
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            const gene = tab.dataset.gene;
+            state.currentGene = gene;
+            const targetPanel = document.querySelector(`.gene-panel[data-gene="${gene}"]`);
+            if (targetPanel) targetPanel.classList.add('active');
+    }
+
+    // Add gene button wiring
+    function setupAddGeneButton() {
+        const addBtn = document.getElementById('add-gene-btn');
+        if (!addBtn) return;
+        addBtn.addEventListener('click', function() {
+            // determine current highest gene
+            const existingTabs = Array.from(document.querySelectorAll('.gene-tab')).map(b => parseInt(b.dataset.gene || '1'));
+            const max = existingTabs.length ? Math.max(...existingTabs) : 1;
+            const next = max + 1;
+            ensureGenesUI(next);
+            ensureGeneParameterSections(next);
+            // activate the new tab
+            const newTab = document.querySelector(`.gene-tab[data-gene="${next}"]`);
+            if (newTab) {
+                // dispatch a bubbling click so delegated listener handles it reliably
+                newTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                // smooth scroll so the tab is visible when many tabs exist
+                try { newTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
+                // adjust tab density after adding
+                updateGeneTabDensity();
+            }
+        });
+    }
+
+    // Remove gene button wiring
+    function setupRemoveGeneButton() {
+        const removeBtn = document.getElementById('remove-gene-btn');
+        if (!removeBtn) return;
+        removeBtn.addEventListener('click', function() {
+            // Find highest gene number
+            const tabs = Array.from(document.querySelectorAll('.gene-tab')).map(b => parseInt(b.dataset.gene || '1')).filter(n => !isNaN(n));
+            if (tabs.length <= 1) return; // nothing to remove (keep gene 1)
+            const max = Math.max(...tabs);
+            if (max <= 1) return;
+
+            // Remove UI: tab, panel, and parameter section
+            const tab = document.querySelector(`.gene-tab[data-gene="${max}"]`);
+            const panel = document.querySelector(`.gene-panel[data-gene="${max}"]`);
+            const paramSummary = Array.from(document.querySelectorAll('.dial-accordion-item')).find(det => {
+                const s = det.querySelector('.dial-accordion-header');
+                return s && s.textContent.trim().match(new RegExp(`Gene\\s*${max}`));
+            });
+
+            // Reassign placed components for this gene to Gene 1 to avoid losing them
+            state.placedComponents.forEach(c => {
+                const geneNum = parseInt((c.gene || 'Gene 1').split(' ')[1]) || 1;
+                if (geneNum === max) {
+                    c.gene = 'Gene 1';
                 }
             });
+
+            // Update visuals on board where necessary
+            document.querySelectorAll('.cell.has-component').forEach(cell => {
+                const text = (cell.textContent || '').trim();
+                const m = text.match(/^(\d+):/);
+                if (m && parseInt(m[1]) === max) {
+                    // change displayed gene number to 1
+                    const rest = text.replace(/^\d+:/, '1:');
+                    cell.firstChild && (cell.firstChild.textContent = rest);
+                    cell.textContent = rest; // simpler approach
+                }
+            });
+
+            if (tab) tab.remove();
+            if (panel) panel.remove();
+            if (paramSummary) paramSummary.remove();
+
+            // Activate the previous highest tab
+            const remaining = Array.from(document.querySelectorAll('.gene-tab')).map(b => parseInt(b.dataset.gene || '1'));
+            const newMax = remaining.length ? Math.max(...remaining) : 1;
+            const newTab = document.querySelector(`.gene-tab[data-gene="${newMax}"]`);
+            if (newTab) activateGeneTab(newTab);
+            // update compact/normal density after removal
+            updateGeneTabDensity();
         });
+    }
+
+    // Reduce tab padding/min-width when many genes are present so layout doesn't expand
+    function updateGeneTabDensity() {
+        const wrapper = document.querySelector('.gene-tabs-wrapper');
+        if (!wrapper) return;
+        const tabCount = document.querySelectorAll('.gene-tab').length;
+        // Toggle a class that makes tabs more compact when there are many of them
+        if (tabCount > 10) {
+            wrapper.classList.add('many-genes');
+        } else {
+            wrapper.classList.remove('many-genes');
+        }
+    }
+
+    // Add parameter sections (accordion details) for genes beyond the static ones
+    function ensureGeneParameterSections(maxGene) {
+        const dialFormEl = document.getElementById('dial-form');
+        if (!dialFormEl) return;
+        const accordion = dialFormEl.querySelector('.dial-accordion');
+        if (!accordion) return;
+
+        // Helper to create a details block for a gene
+        function createGeneDetails(n) {
+            const d = document.createElement('details');
+            d.className = 'dial-accordion-item';
+            const s = document.createElement('summary');
+            s.className = 'dial-accordion-header';
+            s.textContent = `Gene ${n} Components`;
+            d.appendChild(s);
+
+            const body = document.createElement('div');
+            body.className = 'dial-accordion-body';
+            const grid = document.createElement('div');
+            grid.className = 'dial-grid';
+
+            const fields = [
+                ['Promoter Strength', `promoter${n}_strength`, '1.0', '0.1', '5.0', '0.1'],
+                ['RBS Efficiency', `rbs${n}_efficiency`, '1.0', '0.1', '2.0', '0.1'],
+                ['CDS Translation Rate', `cds${n}_translation_rate`, '5.0', '1.0', '20.0', '0.5'],
+                ['CDS Degradation Rate', `cds${n}_degradation_rate`, '0.1', '0.01', '1.0', '0.01'],
+                ['Terminator Eff', `terminator${n}_efficiency`, '0.99', '0.1', '1.0', '0.01'],
+                ['Initial Protein Conc', `protein${n}_initial_conc`, '0.1', '0.0', '2.0', '0.05']
+            ];
+
+            fields.forEach(([label, name, value, min, max, step]) => {
+                const lab = document.createElement('label');
+                lab.setAttribute('for', name);
+                lab.textContent = label + ':';
+                const inp = document.createElement('input');
+                inp.type = 'number';
+                inp.id = name;
+                inp.name = name;
+                inp.value = value;
+                inp.min = min;
+                inp.max = max;
+                inp.step = step;
+                grid.appendChild(lab);
+                grid.appendChild(inp);
+            });
+
+            body.appendChild(grid);
+            d.appendChild(body);
+            return d;
+        }
+
+        // Determine existing gene detail numbers
+        const existing = Array.from(accordion.querySelectorAll('.dial-accordion-item')).map(det => {
+            const summary = det.querySelector('.dial-accordion-header');
+            if (!summary) return 0;
+            const m = summary.textContent.match(/Gene\s*(\d+)/i);
+            return m ? parseInt(m[1]) : 0;
+        }).filter(n => n > 0);
+        const maxExisting = existing.length ? Math.max(...existing) : 1;
+
+        for (let i = 1; i <= maxGene; i++) {
+            if (i <= maxExisting) continue; // already present
+            const details = createGeneDetails(i);
+            accordion.appendChild(details);
+        }
+    }
+
+    // Gene tab functionality
+    function setupGeneTabs() {
+        const tabsContainer = document.getElementById('gene-tabs');
+        if (!tabsContainer) return;
+        if (tabsContainer._geneListenerAttached) return; // idempotent
+
+        tabsContainer.addEventListener('click', function(e) {
+            const tab = e.target.closest('.gene-tab');
+            if (!tab || !tabsContainer.contains(tab)) return;
+
+            // Deactivate all tabs and panels
+            document.querySelectorAll('.gene-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.gene-panel').forEach(p => p.classList.remove('active'));
+
+            // Activate clicked tab
+            tab.classList.add('active');
+            const gene = tab.dataset.gene;
+            state.currentGene = gene;
+
+            const targetPanel = document.querySelector(`.gene-panel[data-gene="${gene}"]`);
+            if (targetPanel) targetPanel.classList.add('active');
+        });
+
+        tabsContainer._geneListenerAttached = true;
     }
 
     // Component selection and strength menu
     function setupComponents() {
-        components.forEach(comp => {
+        // Re-query components live so newly cloned panels are included
+        const liveComponents = document.querySelectorAll('.component');
+        liveComponents.forEach(comp => {
+            if (comp._setupDone) return; // avoid double-binding
+            comp._setupDone = true;
             // Make components draggable
             comp.setAttribute('draggable', 'true');
             
@@ -389,6 +975,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         });
+        // update the global components NodeList reference for other functions
+        // (optional) but keep original variable to avoid undefined elsewhere
+        // components = document.querySelectorAll('.component'); // don't overwrite const
     }
 
     // Cell interactions
@@ -556,7 +1145,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'Repressor Start': '#A78BFA',
             'Repressor End': '#7E22CE',
             'Activator Start': '#3B82F6',
-            'Activator End': '#1E40AF'
+            'Activator End': '#1E40AF',
+            'Inducer': '#FF69B4'
         };
 
         // Clear existing content
@@ -567,6 +1157,22 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.style.color = 'white';
         cell.style.fontWeight = '600';
         cell.classList.add('has-component');
+
+        // Mark cell as a node for jsPlumb
+        cell.classList.add('component-node');
+        cell.dataset.component = component.type;
+        cell.dataset.gene = component.gene;
+
+        // Notify connector systems (jsPlumb or SVG fallback) to attach endpoints/handles
+        // do this in next tick so the DOM is stable and mutation observers have processed
+        setTimeout(() => {
+            if (typeof window.__attachJsPlumbEndpoint === 'function') {
+                try { window.__attachJsPlumbEndpoint(cell); } catch (e) { /* ignore */ }
+            }
+            if (typeof window.__attachSvgHandle === 'function') {
+                try { window.__attachSvgHandle(cell); } catch (e) { /* ignore */ }
+            }
+        }, 0);
 
         // Create component display
         const geneNum = component.gene.split(' ')[1];
@@ -588,6 +1194,11 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.textContent = '';
         cell.classList.remove('has-component');
         
+        // Remove jsPlumb marker and attributes
+        cell.classList.remove('component-node');
+        delete cell.dataset.component;
+        delete cell.dataset.gene;
+
         const dot = cell.querySelector('.strength-dot');
         if (dot) {
             dot.remove();
@@ -604,7 +1215,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'Repressor Start': 'Rs',
             'Repressor End': 'Re',
             'Activator Start': 'As',
-            'Activator End': 'Ae'
+            'Activator End': 'Ae',
+            'Inducer': 'I'
         };
         return abbreviations[type] || type.charAt(0);
     }
@@ -666,17 +1278,26 @@ document.addEventListener('DOMContentLoaded', function() {
             // Prepare request data
             const requestData = { cellboard: cellboard };
 
-            // Add dial data if in dial mode
+            // Add dial data if in dial mode AND the user enabled parameter overrides
             if (dialForm) {
-                const dialData = {};
-                const inputs = dialForm.querySelectorAll('input[type="number"]');
-                inputs.forEach(input => {
-                    dialData[input.name] = parseFloat(input.value) || 0;
-                });
-                requestData.dial = dialData;
+                const toggle = document.getElementById('enable_dial_params');
+                const includeDial = toggle ? toggle.checked : true;
+                // Tell server explicitly whether to apply dial overrides
+                requestData.apply_dial = !!includeDial;
+                if (includeDial) {
+                    const dialData = {};
+                    // only gather enabled inputs (disabled inputs are ignored)
+                    const inputs = dialForm.querySelectorAll('input[type="number"]:not([disabled])');
+                    inputs.forEach(input => {
+                        dialData[input.name] = parseFloat(input.value) || 0;
+                    });
+                    requestData.dial = dialData;
+                }
+                // if includeDial is false, we explicitly set apply_dial=false and omit dial
             }
 
-            console.log('Sending simulation request:', requestData);
+            // Debug: show whether dial overrides will be applied and the full payload
+            console.log('Sending simulation request. apply_dial:', requestData.apply_dial, 'payload:', requestData);
 
             // Send simulation request
             const response = await fetch('/simulate', {
@@ -903,12 +1524,16 @@ Tips:
                                 const part = key.replace('missing_', '');
                                 return `<span class="missing-part">${part}</span>`;
                             }).join(', ')}
-                            ${fallbacks.prom_strength !== undefined ? 
-                                `<small class="text-muted">(promoter strength adjusted to ${fallbacks.prom_strength})</small>` : ''}
-                            ${fallbacks.rbs_efficiency !== undefined ? 
-                                `<small class="text-muted">(RBS efficiency adjusted to ${fallbacks.rbs_efficiency})</small>` : ''}
-                            ${fallbacks.degradation_rate !== undefined ? 
-                                `<small class="text-muted">(degradation adjusted to ${fallbacks.degradation_rate})</small>` : ''}
+                            ${(() => {
+                                const showAdjusted = document.getElementById('enable_dial_params')?.checked;
+                                if (!showAdjusted) return '';
+                                return `${fallbacks.prom_strength !== undefined ? 
+                                    `<small class="text-muted">(promoter strength adjusted to ${fallbacks.prom_strength})</small>` : ''}
+                                ${fallbacks.rbs_efficiency !== undefined ? 
+                                    `<small class="text-muted">(RBS efficiency adjusted to ${fallbacks.rbs_efficiency})</small>` : ''}
+                                ${fallbacks.degradation_rate !== undefined ? 
+                                    `<small class="text-muted">(degradation adjusted to ${fallbacks.degradation_rate})</small>` : ''}`;
+                            })()}
                         </div>
                     `).join('')}
                 </div>

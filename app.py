@@ -168,7 +168,9 @@ def simulate():
             }), 400
         
         cellboard = data['cellboard']
-        dial_data = data.get('dial', {})
+        # Explicit flag from client telling whether dial overrides should be applied
+        apply_dial = bool(data.get('apply_dial', True))
+        dial_data = data.get('dial', {}) if apply_dial else {}
         
         # Convert cellboard format to hardware txt file format
         placed_components = []
@@ -255,12 +257,18 @@ def simulate():
                 'cds': {},
                 'repressor': {}
             }
+        all_genes = set()
+        for components in cellboard.values():
+            for comp in components:
+                gene_name = comp.get('gene', '')
+                if gene_name.startswith('Gene'):
+                    gene_num = gene_name.split()[-1]
+                    all_genes.add(gene_num)
             
             # Map dial parameters to component types with per-gene specificity
             gene_overrides = {
-                '1': {'promoter': {}, 'rbs': {}, 'cds': {}, 'terminator': {}},
-                '2': {'promoter': {}, 'rbs': {}, 'cds': {}, 'terminator': {}},
-                '3': {'promoter': {}, 'rbs': {}, 'cds': {}, 'terminator': {}}
+                str(g): {'promoter': {}, 'rbs': {}, 'cds': {}, 'terminator': {}}
+                for g in sorted(all_genes, key=lambda x: int(x))
             }
             
             # Parse gene-specific parameters
@@ -308,7 +316,21 @@ def simulate():
                         override_groups['repressor']['n'] = float(value)
                 except (ValueError, TypeError):
                     continue
-            
+            for param_name, value in dial_data.items():
+                for gene_num in gene_overrides:
+                    if f'promoter{gene_num}_strength' in param_name:
+                        gene_overrides[gene_num]['promoter']['strength'] = float(value)
+                    elif f'rbs{gene_num}_efficiency' in param_name:
+                        gene_overrides[gene_num]['rbs']['efficiency'] = float(value)
+                    elif f'cds{gene_num}_translation_rate' in param_name:
+                        gene_overrides[gene_num]['cds']['translation_rate'] = float(value)
+                    elif f'cds{gene_num}_degradation_rate' in param_name:
+                        gene_overrides[gene_num]['cds']['degradation_rate'] = float(value)
+                    elif f'terminator{gene_num}_efficiency' in param_name:
+                        gene_overrides[gene_num]['terminator']['efficiency'] = float(value)
+                    elif f'protein{gene_num}_initial_conc' in param_name:
+                        gene_overrides[gene_num]['cds']['init_conc'] = float(value)
+
 
             
             # Apply gene-specific overrides first (highest priority)
@@ -483,14 +505,14 @@ def simulate():
 def get_components():
     """Get available components and their properties"""
     components = {
-        'Promoter': {'color': '#FF6B6B', 'genes': ['1', '2', '3']},
-        'Terminator': {'color': '#4ECDC4', 'genes': ['1', '2', '3']},
-        'RBS': {'color': '#FFD166', 'genes': ['1', '2', '3']},
-        'CDS': {'color': '#06D6A0', 'genes': ['1', '2', '3']},
-        'Repressor Start': {'color': '#A78BFA', 'genes': ['1', '2', '3']},
-        'Repressor End': {'color': '#7E22CE', 'genes': ['1', '2', '3']},
-        'Activator Start': {'color': '#3B82F6', 'genes': ['1', '2', '3']},
-        'Activator End': {'color': '#1E40AF', 'genes': ['1', '2', '3']}
+        'Promoter': {'color': '#FF6B6B'},
+        'Terminator': {'color': '#4ECDC4'},
+        'RBS': {'color': '#FFD166'},
+        'CDS': {'color': '#06D6A0'},
+        'Repressor Start': {'color': '#A78BFA'},
+        'Repressor End': {'color': '#7E22CE'},
+        'Activator Start': {'color': '#3B82F6'},
+        'Activator End': {'color': '#1E40AF'}
     }
     return jsonify(components)
 
@@ -851,10 +873,15 @@ def convert_hardware_to_cellboard(channel_data):
         'repressor_end': 'Repressor End', 
         'activator_start': 'Activator Start',
         'activator_end': 'Activator End',
+        'inducer_start': 'Inducer Start',
+        'inducer_end': 'Inducer End',
+        'inducer': 'Inducer',
         'rep_start': 'Repressor Start',
         'rep_end': 'Repressor End',
         'act_start': 'Activator Start',
         'act_end': 'Activator End',
+        'ind_start': 'Inducer Start',
+        'ind_end': 'Inducer End',
         'r': 'Repressor Start',  # Your specific repressor format
         'or': 'Operator'  # Your specific operator format
     }

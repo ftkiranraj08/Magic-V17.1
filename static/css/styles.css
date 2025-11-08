@@ -4,7 +4,7 @@
    ============================ */
 
 :root {
-    --primary: #009C4D;
+    --primary:rgba(178, 243, 95);
     --primary-light: #4CB881;
     --primary-dark: #007A3D;
     --secondary: #FFD700;
@@ -17,34 +17,54 @@
 
 /* Base Layout */
 body {
-    background-color: var(--bs-dark);
+    background-color: rgba(27, 38, 39);
     color: var(--bs-light);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
-
 .navbar {
     background-color: var(--primary) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    border-radius: 999px; /* pill shape */
+    padding: 0.35rem 1rem; /* vertical and horizontal padding inside the pill */
+    width: auto;
+    max-width: 1100px; /* limit width so it doesn't touch screen edges */
+    margin: 12px auto; /* center horizontally with small gap from top */
 }
 
 .navbar-brand {
     font-weight: 700;
-    color: white !important;
+    color: rgb(8, 8, 8) !important;
+}
+
+/* Ensure the container inside the navbar doesn't add extra large side padding */
+.navbar .container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Responsive: on small screens let navbar use most of the width while keeping rounded look */
+@media (max-width: 768px) {
+    .navbar {
+        max-width: calc(100% - 2rem);
+        margin: 8px auto;
+        padding: 0.25rem 0.75rem;
+    }
 }
 
 .nav-link {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(9, 0, 0, 0.9) !important;
     font-weight: 500;
     transition: var(--transition);
 }
 
 .nav-link:hover,
 .nav-link.active {
-    color: white !important;
+    color: rgb(18, 18, 18) !important;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
 }
-
 /* Main Grid Layout */
 .main-grid {
     display: grid;
@@ -161,14 +181,14 @@ body {
 }
 
 /* Component Colors */
-.component[data-component="Promoter"] { background: linear-gradient(135deg, #FF6B6B, #e55555); }
-.component[data-component="Terminator"] { background: linear-gradient(135deg, #4ECDC4, #45b7b8); }
-.component[data-component="RBS"] { background: linear-gradient(135deg, #FFD166, #f39c12); }
-.component[data-component="CDS"] { background: linear-gradient(135deg, #06D6A0, #00b894); }
-.component[data-component="Repressor Start"] { background: linear-gradient(135deg, #A78BFA, #9b59b6); }
-.component[data-component="Repressor End"] { background: linear-gradient(135deg, #7E22CE, #6c5ce7); }
-.component[data-component="Activator Start"] { background: linear-gradient(135deg, #3B82F6, #2980b9); }
-.component[data-component="Activator End"] { background: linear-gradient(135deg, #1E40AF, #2c3e50); }
+.component[data-component="Promoter"] { background: #de7689; }
+.component[data-component="Terminator"] { background: rgb(225, 218, 3); }
+.component[data-component="RBS"] { background: #CF9E53; }
+.component[data-component="CDS"] { background: #3C5EB4; }
+.component[data-component="Repressor Start"] { background: #920702; }
+.component[data-component="Repressor End"] { background: #920702; }
+.component[data-component="Activator Start"] { background: #6DB079; }
+.component[data-component="Activator End"] { background: #6DB079; }
 
 /* Strength Menu */
 .strength-menu {
@@ -374,7 +394,7 @@ body {
     align-items: center;
     justify-content: center;
     background: var(--bs-dark);
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid transparent;
     border-radius: var(--border-radius);
     margin-top: 1rem;
     position: relative;
@@ -900,151 +920,4 @@ body {
         max-height: 200px;
     }
 }
-.cell-board-header1 {
-  text-align: center;
-  
-}
-.cell-board-title1 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 0;
-  line-height: 1.1;
-  margin-left: 24px;
-}
-/* Individual letter colors matching the physical board */
-/* Coral */
-.letter-c { color: #4A90E2; }       /* Blue */
-.letter-e1 { color: #7ED321; }      /* Green */
-.letter-l2 { color: #7ED321; }      /* Green */
-.letter-l3 { color: #7ED321; }      /* Green */
-.letter-b { color: #E85A4F; }       /* Coral */
-.letter-o { color: #F5A623; }       /* Orange */
-.letter-a { color: #D0021B; }       /* Red */
-.letter-r { color: #50E3C2; }       /* Mint */
-.letter-d { color: #9013FE; }       /* Purple */
-.letter-mini { 
-  color: #4A90E2; 
-  font-size: 0.6em;
-  vertical-align: super;
-}
-.lab-subtitle1 {
-  font-size: 1rem;
-  color: #666;
-  margin-top: 10px;
-  font-weight: 300;
-    margin-left: 24px;
-}
 
-/* ============================
-   Dial Mode Specific Styles
-   ============================ */
-
-/* Dial Mode Container: 2 columns (sidebar + main) */
-.dial-mode-container {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 1.5rem;
-    margin-top: 1rem;
-}
-
-/* SIDEBAR: dial inputs */
-.dial-sidebar {
-    background: var(--bs-dark);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    height: fit-content;
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-}
-
-.dial-sidebar h2 {
-    margin-top: 0;
-    font-size: 1.25rem;
-    color: #EF8080;
-    margin-bottom: 1.5rem;
-    border-bottom: 2px solid var(--primary);
-    padding-bottom: 0.5rem;
-}
-
-/* Each parameter group's dial card */
-.dial-card {
-    background: var(--bs-dark);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.dial-card h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
-    color: var(--primary);
-    font-weight: 600;
-}
-
-.dial-grid {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.75rem 1rem;
-    align-items: center;
-}
-
-.dial-grid label {
-    font-size: 0.85rem;
-    color: var(--bs-light);
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-}
-
-.dial-grid input {
-    width: 80px;
-    padding: 0.375rem 0.5rem;
-    font-size: 0.85rem;
-    border: 1px solid var(--bs-border-color);
-    border-radius: calc(var(--border-radius) - 2px);
-    transition: var(--transition);
-    background: var(--bs-dark);
-    color: var(--bs-light);
-}
-
-.dial-grid input:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 156, 77, 0.25);
-    background: var(--bs-dark);
-}
-
-/* MAIN AREA: stacked vertical sections */
-.dial-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-.lab-logoss {
-    position: absolute;
-    top: 83px;          /* Distance from top */
-    left: 180px;         /* Distance from left */
-    max-width: 70px;
-    height: 70px;
-    object-fit: contain;
-    z-index: 1;         /* Ensure logo stays on top */
-}
-
-.grid-container::after {
-    content: '';
-    position: absolute;
-    top: calc(1 * (calc(var(--cell-size) * 0.9) + 92px) + 80px); /* Start after 1 row */
-    left: calc(1 * (var(--cell-size) + 123px) - 4px); /* Start after 1 column */
-    width: calc(8 * (var(--cell-size) + 19px) - 165px); /* Width of 8 cells */
-    height: calc(8 * (calc(var(--cell-size) * 0.6) + 44px) - 175px); /* Height of 8 rows */
-    border: 4px solid #E91E63; /* Pink border */
-    border-radius: 8px;
-    pointer-events: none;
-    z-index: 15;
-}
