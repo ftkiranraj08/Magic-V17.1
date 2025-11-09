@@ -911,6 +911,25 @@
                             <div class="cell functional" data-x="9" data-y="9"></div>
                         </div>
                     </div>
+                    
+                    <!-- SVG overlay for connectors -->
+                    <svg id="connector-svg" class="connector-overlay">
+                        <defs>
+                            <!-- Arrow marker for connector direction -->
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#e88802"/>
+                            </marker>
+                        </defs>
+                        <g id="connections-layer"></g>
+                        <!-- Template connector (hidden) -->
+                        <g class="connector-template" style="display: none;">
+                            <path class="connector-path-outline" />
+                            <path class="connector-path" />
+                            <circle class="connector-handle input-handle" cx="0" cy="0" r="4" />
+                            <circle class="connector-handle output-handle" cx="0" cy="0" r="4" />
+                        </g>
+                    </svg>
+                    
                     <!-- Controls -->
                     <div class="controls">
                         <button id="simulate-btn" class="btn btn-primary">

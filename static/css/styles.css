@@ -921,3 +921,139 @@ body {
     }
 }
 
+/* ============================
+   CONNECTOR SYSTEM STYLES
+   ============================ */
+
+/* SVG overlay for connectors */
+.connector-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow clicks to pass through to cells */
+    z-index: 10;
+}
+
+/* Component ports container positioning */
+.cell.has-component {
+    position: relative !important;
+}
+
+/* Component ports */
+.component-port {
+    position: absolute !important;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #666 !important;
+    background-color: #333 !important;
+    cursor: pointer;
+    pointer-events: auto; /* Enable clicks on ports */
+    transition: all 0.2s ease;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.component-port:hover {
+    border-color: #fff;
+    background-color: #e88802;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(232, 136, 2, 0.6);
+}
+
+.component-port.output-port {
+    right: -8px;
+    top: 50%;
+    margin-top: -8px;
+    border-color: #666 !important;
+}
+
+.component-port.input-port {
+    left: -8px;
+    top: 50%;
+    margin-top: -8px;
+    border-color: #666 !important;
+}
+
+.component-port.connected {
+    background-color: #e88802;
+    border-color: #fff;
+    box-shadow: 0 0 6px rgba(232, 136, 2, 0.5);
+}
+
+/* Connector paths */
+.connector-path {
+    stroke: #e88802;
+    stroke-width: 3;
+    fill: none;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.connector-path:hover {
+    stroke: #ffb347;
+    stroke-width: 4;
+}
+
+.connector-path-outline {
+    stroke: #333;
+    stroke-width: 5;
+    fill: none;
+    pointer-events: none;
+}
+
+/* Connector handles */
+.connector-handle {
+    fill: #e88802;
+    stroke: #333;
+    stroke-width: 1;
+    cursor: grab;
+    pointer-events: auto;
+}
+
+.connector-handle:hover {
+    fill: #ffb347;
+    r: 6;
+}
+
+.connector-handle:active {
+    cursor: grabbing;
+}
+
+/* Visual feedback for valid connection targets */
+.valid-connection-target {
+    background-color: rgba(76, 175, 80, 0.3) !important;
+    border: 2px solid #4CAF50 !important;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.invalid-connection-target {
+    background-color: rgba(244, 67, 54, 0.3) !important;
+    border: 2px solid #f44336 !important;
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+}
+
+/* Port highlighting during drag */
+.port-highlight {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* Connection preview line while dragging */
+.connection-preview {
+    stroke: #e88802;
+    stroke-width: 2;
+    stroke-dasharray: 5,5;
+    fill: none;
+    opacity: 0.7;
+}
+

@@ -42,8 +42,21 @@ document.addEventListener('DOMContentLoaded', function() {
         setupButtons();
         setupDragAndDrop();
         setupDialToggle();
-        setupJsPlumb();
-        setupSvgConnectors();
+
+        // Initialize connector system after a short delay to ensure DOM is ready
+        setTimeout(() => {
+            console.log('Attempting to initialize ConnectorManager...');
+            try {
+                if (!ConnectorManager.init()) {
+                    console.warn('ConnectorManager initialization failed - connector features disabled');
+                } else {
+                    console.log('ConnectorManager initialized successfully');
+                }
+            } catch (error) {
+                console.error('Error initializing ConnectorManager:', error);
+            }
+        }, 100);
+
         setupAddGeneButton();
     setupRemoveGeneButton();
         
@@ -58,307 +71,514 @@ document.addEventListener('DOMContentLoaded', function() {
         loadHardwareCircuitData();
     }
 
-    // jsPlumb integration for connecting repressor start -> repressor end
-    function setupJsPlumb() {
-        // If jsPlumb isn't present, attempt to load it dynamically from fallbacks (CDNs/local)
-        if (typeof jsPlumb === 'undefined' && typeof window.jsPlumb === 'undefined') {
-            console.warn('jsPlumb not found — attempting dynamic load from fallbacks');
-            const fallbacks = [
-                'https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/1.7.11/jquery.jsPlumb-1.7.11-min.js',
-                'https://cdn.jsdelivr.net/gh/jsplumb/jsplumb@1.7.11/dist/js/jsplumb.min.js',
-                // local fallback (place file at static/vendor/jquery.jsPlumb-1.7.11-min.js)
-                window.location.origin + '/static/vendor/jquery.jsPlumb-1.7.11-min.js'
-            ];
+    // ============================
+    // CONNECTOR SYSTEM CLASSES
+    // ============================
 
-            function tryLoad(index) {
-                if (index >= fallbacks.length) {
-                    console.warn('All jsPlumb fallbacks failed');
-                    return Promise.resolve(false);
-                }
-                return new Promise(function(resolve) {
-                    const s = document.createElement('script');
-                    s.src = fallbacks[index];
-                    s.async = false;
-                    s.onload = function() { console.log('Loaded jsPlumb fallback:', fallbacks[index]); resolve(true); };
-                    s.onerror = function() { console.warn('Failed to load jsPlumb fallback:', fallbacks[index]); resolve(tryLoad(index + 1)); };
-                    document.head.appendChild(s);
-                });
-            }
-
-            // Try to load then re-run setup after successful load
-            tryLoad(0).then(function(success) {
-                if (success && (typeof jsPlumb !== 'undefined' || typeof window.jsPlumb !== 'undefined')) {
-                    // Small delay to ensure the library is fully initialised
-                    setTimeout(setupJsPlumb, 50);
-                } else {
-                    console.warn('jsPlumb could not be loaded; connector features will be disabled.');
-                }
-            });
-
-            return; // bail for now; will re-enter when loaded
+    // Genetic Circuit Connector - adapted from sample.js
+    class GeneticConnector {
+        constructor() {
+            this.id = `connector_${++ConnectorManager.nextUid}`;
+            this.dragType = "connector";
+            this.isSelected = false;
+            this.element = ConnectorManager.connectorTemplate.cloneNode(true);
+            this.path = this.element.querySelector(".connector-path");
+            this.pathOutline = this.element.querySelector(".connector-path-outline");
+            this.inputHandle = this.element.querySelector(".input-handle");
+            this.outputHandle = this.element.querySelector(".output-handle");
+            this.inputPort = null;
+            this.outputPort = null;
+            this.staticPort = null;
+            this.dragElement = null;
+            this.staticElement = null;
+            this.isInput = false;
         }
 
-        const J = (window.jsPlumb || jsPlumb).getInstance();
-    // Render connectors into the document body to avoid being clipped by container overflow
-    try { J.setContainer(document.body); } catch (e) { /* ignore if not supported */ }
+        init(port) {
+            ConnectorManager.connectionsLayer.appendChild(this.element);
+            this.element.style.display = 'block';
 
-        // common endpoint settings
-        const sourceEndpoint = {
-            endpoint: 'Dot',
-            paintStyle: { fill: '#a78bfa', radius: 6 },
-            isSource: true,
-            maxConnections: 1,
-            connector: ['Bezier', { curviness: 50 }],
-            connectorStyle: { stroke: '#a78bfa', strokeWidth: 3 },
-            anchors: ['Right'],
-            overlays: [
-                ['Arrow', { width: 10, length: 12, location: 1 }]
-            ]
-        };
+            this.isInput = port.isInput;
+            this.staticPort = port;
 
-        const targetEndpoint = {
-            endpoint: 'Dot',
-            paintStyle: { fill: '#7E22CE', radius: 6 },
-            isTarget: true,
-            maxConnections: 1,
-            anchors: ['Left']
-        };
-
-        function addEndpointsForElement(el) {
-            // only attach once
-            if (el._jsplumbAttached) return;
-            el._jsplumbAttached = true;
-            // only attach for placed board nodes inside grid, not palette
-            if (!el.classList.contains('component-node')) return;
-            if (!el.closest('.grid-container')) return;
-            const compType = el.dataset.component;
-            // Only create handles/endpoints for Repressor Start and Repressor End
-            if (compType === 'Repressor Start') {
-                // create a small handle element for visual affordance (source)
-                const handle = document.createElement('div');
-                handle.className = 'connection-handle connection-source';
-                el.appendChild(handle);
-                J.addEndpoint(el, sourceEndpoint);
-            } else if (compType === 'Repressor End') {
-                // create a small handle element for visual affordance (target)
-                const tHandle = document.createElement('div');
-                tHandle.className = 'connection-handle connection-target';
-                el.appendChild(tHandle);
-                J.addEndpoint(el, targetEndpoint);
-            }
-        }
-
-    // expose single-element attach API so other code can call it when elements are updated
-    try { window.__attachJsPlumbEndpoint = addEndpointsForElement; } catch (e) { /* ignore */ }
-
-    // Attach only to placed board nodes
-    document.querySelectorAll('.component-node').forEach(addEndpointsForElement);
-
-        // Observe for dynamic additions
-        const obs = new MutationObserver(() => {
-            document.querySelectorAll('.component-node').forEach(addEndpointsForElement);
-        });
-        obs.observe(document.body, { childList: true, subtree: true });
-
-        // Handle new connections
-        J.bind('connection', function(info) {
-            // Prevent duplicate connections between the same source and target
-            try {
-                const existing = J.getConnections({ source: info.source, target: info.target }) || [];
-                // Remove all but the newest connection for this pair
-                if (existing.length > 1) {
-                    for (let i = 0; i < existing.length - 1; i++) {
-                        try { J.detach(existing[i]); } catch (e) { /* ignore detach errors */ }
-                    }
-                }
-                // Also enforce one connection per source and per target overall
-                const fromSource = J.getConnections({ source: info.source }) || [];
-                fromSource.forEach(c => { if (c !== info.connection) { try { J.detach(c); } catch (e) {} } });
-                const toTarget = J.getConnections({ target: info.target }) || [];
-                toTarget.forEach(c => { if (c !== info.connection) { try { J.detach(c); } catch (e) {} } });
-            } catch (e) {
-                // fallback: remove previous from state
-                state.placedConnections = state.placedConnections || [];
-                state.placedConnections = state.placedConnections.filter(c => !(c.source === info.source.dataset.component && c.target === info.target.dataset.component));
-            }
-
-            console.log('New connection:', info);
-            // store connection info in state or serialize to server
-            state.placedConnections = state.placedConnections || [];
-            state.placedConnections.push({ source: info.source.dataset.component, target: info.target.dataset.component, uuid: info.connection.id });
-        });
-
-        // Optional: attempt to auto-connect any existing Repressor Start -> Repressor End endpoints
-        setTimeout(() => {
-            try {
-                const starts = Array.from(document.querySelectorAll('.component-node')).filter(c => c.dataset.component === 'Repressor Start');
-                const ends = Array.from(document.querySelectorAll('.component-node')).filter(c => c.dataset.component === 'Repressor End');
-                // connect first start to first end if neither is connected
-                if (starts.length && ends.length) {
-                    const startEl = starts[0];
-                    const endEl = ends[0];
-                    // check if already connected
-                    const existing = J.getConnections({ source: startEl, target: endEl });
-                    if (!existing || existing.length === 0) {
-                        J.connect({ source: startEl, target: endEl, anchors: ['Right', 'Left'], connector: ['Bezier', { curviness: 50 }], paintStyle: { stroke: '#a78bfa', strokeWidth: 3 }, overlays: [['Arrow', { width: 10, length: 12, location: 1 }]] });
-                    }
-                }
-            } catch (e) {
-                // ignore auto-connect errors
-                console.warn('Auto-connect failed', e);
-            }
-        }, 300);
-    }
-
-    // Lightweight SVG connector fallback (used when jsPlumb is not available)
-    function setupSvgConnectors() {
-        // create an SVG overlay that covers the page
-        if (document.getElementById('svg-connector-overlay')) return; // idempotent
-
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('id', 'svg-connector-overlay');
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
-    svg.style.width = '100%';
-    svg.style.height = '100%';
-    svg.style.pointerEvents = 'none';
-    svg.style.zIndex = '9999'; // ensure overlay is always above grid
-        document.body.appendChild(svg);
-
-        let dragState = null; // {sourceEl, pathEl}
-
-        function screenCenter(el){
-            const r = el.getBoundingClientRect();
-            return { x: r.left + r.width/2 + window.scrollX, y: r.top + r.height/2 + window.scrollY };
-        }
-
-        // helper to create a visible line
-        function makeLine(x1,y1,x2,y2){
-            const line = document.createElementNS('http://www.w3.org/2000/svg','path');
-            const d = `M ${x1} ${y1} C ${x1+40} ${y1} ${x2-40} ${y2} ${x2} ${y2}`;
-            line.setAttribute('d', d);
-            line.setAttribute('stroke', '#a78bfa');
-            line.setAttribute('stroke-width', '3');
-            line.setAttribute('fill', 'none');
-            line.classList.add('svg-connector');
-            line.style.zIndex = '9999'; // always above grid
-            svg.appendChild(line);
-            return line;
-        }
-
-        // mousemove while drawing
-        function onMove(e){
-            if (!dragState) return;
-            const p = { x: e.pageX, y: e.pageY };
-            const s = screenCenter(dragState.sourceEl);
-            const d = `M ${s.x} ${s.y} C ${s.x+40} ${s.y} ${p.x-40} ${p.y} ${p.x} ${p.y}`;
-            dragState.pathEl.setAttribute('d', d);
-        }
-
-        function onUp(e){
-            if (!dragState) return;
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-
-            // detect target element under mouse
-            const el = document.elementFromPoint(e.clientX, e.clientY);
-            const targetComp = el && (el.closest && el.closest('.component-node'));
-            if (targetComp && targetComp.dataset && targetComp.dataset.component === 'Repressor End' && targetComp.closest('.grid-container')) {
-                // Always remove any previous connector for this source-target pair
-                state.placedConnections = state.placedConnections || [];
-                state.placedConnections
-                    .filter(c => c.source === dragState.sourceEl || c.target === targetComp)
-                    .forEach(c => { if (c.path && c.path.parentNode) c.path.parentNode.removeChild(c.path); });
-                state.placedConnections = state.placedConnections.filter(c => !(c.source === dragState.sourceEl || c.target === targetComp));
-
-                // Draw new connector above cells
-                const s = screenCenter(dragState.sourceEl);
-                const t = screenCenter(targetComp);
-                const final = makeLine(s.x, s.y, t.x, t.y);
-                final.style.zIndex = '9999';
-                final.dataset.source = dragState.sourceEl.dataset.component || '';
-                final.dataset.target = targetComp.dataset.component || '';
-                state.placedConnections.push({ source: dragState.sourceEl, target: targetComp, path: final });
+            if (port.isInput) {
+                this.inputPort = port;
+                this.dragElement = this.outputHandle;
+                this.staticElement = this.inputHandle;
             } else {
-                // remove temp path
-                if (dragState.pathEl && dragState.pathEl.parentNode) dragState.pathEl.parentNode.removeChild(dragState.pathEl);
+                this.outputPort = port;
+                this.dragElement = this.inputHandle;
+                this.staticElement = this.outputHandle;
             }
 
-            dragState = null;
+            this.staticElement.setAttribute("data-drag", `${port.id}:port`);
+            this.dragElement.setAttribute("data-drag", `${this.id}:connector`);
+
+            // Set initial positions
+            const pos = port.getGlobalPosition();
+            this.inputHandle.setAttribute('cx', pos.x);
+            this.inputHandle.setAttribute('cy', pos.y);
+            this.outputHandle.setAttribute('cx', pos.x);
+            this.outputHandle.setAttribute('cy', pos.y);
+
+            this.updatePath();
         }
 
-        // attach pointerdown to connection handles (existing elements have .connection-handle or we create them)
-        function attachToElement(el){
-            if (el._svgConnectorAttached) return;
-            el._svgConnectorAttached = true;
+        updatePath() {
+            const x1 = parseFloat(this.inputHandle.getAttribute('cx'));
+            const y1 = parseFloat(this.inputHandle.getAttribute('cy'));
+            const x4 = parseFloat(this.outputHandle.getAttribute('cx'));
+            const y4 = parseFloat(this.outputHandle.getAttribute('cy'));
 
-            // Only attach visible handles for repressor components
-            // Only attach on placed board nodes inside grid
-            if (!el.classList || !el.classList.contains('component-node')) return;
-            if (!el.closest('.grid-container')) return;
-            const compType = el.dataset && el.dataset.component;
-            if (compType === 'Repressor Start') {
-                // ensure there's a visible handle for the source (right side)
-                let handle = el.querySelector('.connection-handle');
-                if (!handle) {
-                    handle = document.createElement('div');
-                    handle.className = 'connection-handle connection-source';
-                    el.appendChild(handle);
-                }
+            const dx = Math.abs(x1 - x4) * 0.4; // bezier weight
+            
+            const p1x = x1, p1y = y1;
+            const p2x = x1 - dx, p2y = y1;
+            const p4x = x4, p4y = y4;
+            const p3x = x4 + dx, p3y = y4;
 
-                handle.style.pointerEvents = 'auto';
-                handle.addEventListener('pointerdown', function(ev){
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    // only start if this is a Repressor Start (defensive)
-                    if (!el.dataset || el.dataset.component !== 'Repressor Start') return;
-                    dragState = { sourceEl: el, pathEl: makeLine(0,0,0,0) };
-                    document.addEventListener('mousemove', onMove);
-                    document.addEventListener('mouseup', onUp);
-                });
-            } else if (compType === 'Repressor End') {
-                // ensure there's a visible handle for the target (visual only)
-                let tHandle = el.querySelector('.connection-handle');
-                if (!tHandle) {
-                    tHandle = document.createElement('div');
-                    tHandle.className = 'connection-handle connection-target';
-                    el.appendChild(tHandle);
-                }
-                // target handle doesn't start drags; just allow pointer events so it can be styled
-                tHandle.style.pointerEvents = 'auto';
+            const pathData = `M${p1x} ${p1y} C ${p2x} ${p2y} ${p3x} ${p3y} ${p4x} ${p4y}`;
+            this.path.setAttribute("d", pathData);
+            this.pathOutline.setAttribute("d", pathData);
+        }
+
+        updateHandle(port) {
+            const pos = port.getGlobalPosition();
+            
+            if (port === this.inputPort) {
+                this.inputHandle.setAttribute('cx', pos.x);
+                this.inputHandle.setAttribute('cy', pos.y);
+            } else if (port === this.outputPort) {
+                this.outputHandle.setAttribute('cx', pos.x);
+                this.outputHandle.setAttribute('cy', pos.y);
             }
+
+            this.updatePath();
         }
 
-        // allow programmatic start of a drag from code elsewhere
-        function startDragOnElement(el) {
-            if (!el || !el.dataset || el.dataset.component !== 'Repressor Start') return;
-            dragState = { sourceEl: el, pathEl: makeLine(0,0,0,0) };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        }
+        placeHandle() {
+            const dragPos = {
+                x: parseFloat(this.dragElement.getAttribute('cx')),
+                y: parseFloat(this.dragElement.getAttribute('cy'))
+            };
 
-    // expose API for attaching svg handles to a single element
-    try { window.__attachSvgHandle = attachToElement; } catch (e) { /* ignore */ }
+            let targetPort = null;
+            const targetComponents = ConnectorManager.getComponentsAtPosition(dragPos);
 
-        // initial attach only to placed board nodes
-        document.querySelectorAll('.component-node').forEach(attachToElement);
-
-        // watch for dynamic additions
-        const obs = new MutationObserver((mutList) => {
-            mutList.forEach(m => {
-                if (m.addedNodes && m.addedNodes.length) {
-                    m.addedNodes.forEach(n => {
-                        if (n.nodeType === 1) {
-                            if (n.matches && n.matches('.component-node')) attachToElement(n);
-                            n.querySelectorAll && n.querySelectorAll('.component-node').forEach(attachToElement);
+            for (let comp of targetComponents) {
+                if (comp === this.staticPort.component) continue; // Skip same component
+                
+                const compatiblePorts = this.isInput ? comp.outputPorts : comp.inputPorts;
+                for (let port of compatiblePorts) {
+                    if (this.isValidConnection(port)) {
+                        const portPos = port.getGlobalPosition();
+                        const distance = Math.sqrt(
+                            Math.pow(dragPos.x - portPos.x, 2) + 
+                            Math.pow(dragPos.y - portPos.y, 2)
+                        );
+                        
+                        if (distance < 20) { // 20px snap distance
+                            targetPort = port;
+                            break;
                         }
-                    });
+                    }
+                }
+                if (targetPort) break;
+            }
+
+            if (targetPort) {
+                this.connectToPort(targetPort);
+            } else {
+                this.remove();
+            }
+        }
+
+        connectToPort(port) {
+            if (this.isInput) {
+                this.outputPort = port;
+            } else {
+                this.inputPort = port;
+            }
+
+            this.dragElement.setAttribute("data-drag", `${port.id}:port`);
+            port.addConnector(this);
+            this.updateHandle(port);
+
+            // Check compatibility and validate connection
+            if (this.inputPort && this.outputPort) {
+                if (!this.isValidConnection(port)) {
+                    this.remove();
+                    return;
+                }
+                
+                console.log(`Connected ${this.outputPort.component.type} to ${this.inputPort.component.type}`);
+            }
+        }
+
+        isValidConnection(targetPort) {
+            if (!this.staticPort || !targetPort) return false;
+            
+            const sourceComp = this.staticPort.component;
+            const targetComp = targetPort.component;
+            
+            // Prevent self-connection
+            if (sourceComp === targetComp) return false;
+            
+            // Check if connecting input to output or vice versa
+            if (this.isInput === targetPort.isInput) return false;
+            
+            // Check component type compatibility
+            const sourceType = sourceComp.type;
+            const targetType = targetComp.type;
+            
+            // Repressor Start can only connect to Repressor End
+            if (sourceType === 'Repressor Start' && targetType !== 'Repressor End') return false;
+            if (sourceType === 'Repressor End' && targetType !== 'Repressor Start') return false;
+            
+            // Activator Start can only connect to Activator End
+            if (sourceType === 'Activator Start' && targetType !== 'Activator End') return false;
+            if (sourceType === 'Activator End' && targetType !== 'Activator Start') return false;
+            
+            return true;
+        }
+
+        remove() {
+            if (this.inputPort) {
+                this.inputPort.removeConnector(this);
+            }
+            if (this.outputPort) {
+                this.outputPort.removeConnector(this);
+            }
+
+            this.isSelected = false;
+            this.path.removeAttribute("d");
+            this.pathOutline.removeAttribute("d");
+            this.dragElement.removeAttribute("data-drag");
+            this.staticElement.removeAttribute("data-drag");
+
+            this.staticPort = null;
+            this.inputPort = null;
+            this.outputPort = null;
+            this.dragElement = null;
+            this.staticElement = null;
+
+            if (this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
+            
+            ConnectorManager.connectorPool.push(this);
+        }
+
+        onDrag() {
+            this.updatePath();
+        }
+
+        onDragEnd() {
+            this.placeHandle();
+        }
+    }
+
+    // Component Port - represents connection points on genetic components
+    class ComponentPort {
+        constructor(component, isInput, element) {
+            this.id = `port_${++ConnectorManager.nextUid}`;
+            this.dragType = "port";
+            this.component = component;
+            this.isInput = isInput;
+            this.element = element;
+            this.connectors = [];
+            this.lastConnector = null;
+
+            // Add data attributes
+            this.element.setAttribute("data-drag", `${this.id}:port`);
+            this.element.classList.add(isInput ? 'input-port' : 'output-port');
+        }
+
+        createConnector() {
+            let connector;
+            
+            if (ConnectorManager.connectorPool.length > 0) {
+                connector = ConnectorManager.connectorPool.pop();
+                ConnectorManager.connectorLookup[connector.id] = connector;
+            } else {
+                connector = new GeneticConnector();
+                ConnectorManager.connectorLookup[connector.id] = connector;
+            }
+
+            connector.init(this);
+            this.lastConnector = connector;
+            this.connectors.push(connector);
+            
+            return connector;
+        }
+
+        addConnector(connector) {
+            if (!this.connectors.includes(connector)) {
+                this.connectors.push(connector);
+                this.element.classList.add('connected');
+            }
+        }
+
+        removeConnector(connector) {
+            const index = this.connectors.indexOf(connector);
+            if (index > -1) {
+                this.connectors.splice(index, 1);
+                if (this.connectors.length === 0) {
+                    this.element.classList.remove('connected');
+                }
+            }
+        }
+
+        getGlobalPosition() {
+            const rect = this.element.getBoundingClientRect();
+            const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
+            
+            return {
+                x: rect.left + rect.width/2 - svgRect.left,
+                y: rect.top + rect.height/2 - svgRect.top
+            };
+        }
+
+        update() {
+            for (let connector of this.connectors) {
+                connector.updateHandle(this);
+            }
+        }
+    }
+
+    // Genetic Component - wrapper for placed components with ports
+    class GeneticComponent {
+        constructor(placedComponent, cell) {
+            this.id = `component_${++ConnectorManager.nextUid}`;
+            this.type = placedComponent.type;
+            this.gene = placedComponent.gene;
+            this.strength = placedComponent.strength;
+            this.cell = cell;
+            this.element = cell;
+            this.inputPorts = [];
+            this.outputPorts = [];
+            
+            this.createPorts();
+        }
+
+        createPorts() {
+            // Only regulatory components get ports
+            console.log(`Creating ports for component: ${this.type}`);
+            if (this.type === 'Repressor Start' || this.type === 'Activator Start') {
+                console.log('Creating output port');
+                this.createOutputPort();
+            } else if (this.type === 'Repressor End' || this.type === 'Activator End') {
+                console.log('Creating input port');
+                this.createInputPort();
+            }
+        }
+
+        createOutputPort() {
+            const portElement = document.createElement('div');
+            portElement.className = 'component-port output-port';
+            portElement.title = 'Output Port - Click and drag to connect';
+            this.element.appendChild(portElement);
+            
+            const port = new ComponentPort(this, false, portElement);
+            this.outputPorts.push(port);
+            ConnectorManager.portLookup[port.id] = port;
+            
+            console.log('Output port created and added to cell:', portElement);
+            console.log('Cell has children:', this.element.children.length);
+            return port;
+        }
+
+        createInputPort() {
+            const portElement = document.createElement('div');
+            portElement.className = 'component-port input-port';
+            portElement.title = 'Input Port - Click and drag to connect';
+            this.element.appendChild(portElement);
+            
+            const port = new ComponentPort(this, true, portElement);
+            this.inputPorts.push(port);
+            ConnectorManager.portLookup[port.id] = port;
+            
+            console.log('Input port created and added to cell:', portElement);
+            console.log('Cell has children:', this.element.children.length);
+            return port;
+        }
+
+        updatePorts() {
+            [...this.inputPorts, ...this.outputPorts].forEach(port => port.update());
+        }
+
+        remove() {
+            // Remove all connectors
+            [...this.inputPorts, ...this.outputPorts].forEach(port => {
+                [...port.connectors].forEach(connector => connector.remove());
+            });
+
+            // Remove port elements
+            [...this.inputPorts, ...this.outputPorts].forEach(port => {
+                if (port.element.parentNode) {
+                    port.element.parentNode.removeChild(port.element);
+                }
+                delete ConnectorManager.portLookup[port.id];
+            });
+
+            // Clear arrays
+            this.inputPorts = [];
+            this.outputPorts = [];
+            
+            delete ConnectorManager.componentLookup[this.id];
+        }
+    }
+
+    // Connector Manager - orchestrates the entire connector system
+    class ConnectorManager {
+        static nextUid = 0;
+        static container = null;
+        static connectionsLayer = null;
+        static connectorTemplate = null;
+        static componentLookup = {};
+        static portLookup = {};
+        static connectorLookup = {};
+        static connectorPool = [];
+        static isDragging = false;
+        static dragTarget = null;
+
+    static init() {
+        console.log('ConnectorManager.init() called');
+        this.container = document.querySelector('.grid-container');
+        this.connectionsLayer = document.getElementById('connections-layer');
+        this.connectorTemplate = document.querySelector('.connector-template');
+
+        console.log('Container:', this.container);
+        console.log('Connections layer:', this.connectionsLayer);
+        console.log('Connector template:', this.connectorTemplate);
+
+        if (!this.container || !this.connectionsLayer || !this.connectorTemplate) {
+            console.error('ConnectorManager: Required elements not found');
+            console.error('Container found:', !!this.container);
+            console.error('Connections layer found:', !!this.connectionsLayer);
+            console.error('Connector template found:', !!this.connectorTemplate);
+            return false;
+        }
+
+        this.setupDragHandling();
+        console.log('ConnectorManager setup complete');
+        return true;
+    }        static setupDragHandling() {
+            let mousePos = { x: 0, y: 0 };
+
+            this.container.addEventListener('mousedown', (e) => {
+                const target = e.target;
+                const dragData = target.getAttribute('data-drag');
+                
+                if (!dragData) return;
+                
+                const [id, type] = dragData.split(':');
+                
+                if (type === 'port') {
+                    e.preventDefault();
+                    const port = this.portLookup[id];
+                    if (port) {
+                        this.startConnectorDrag(port, e);
+                    }
+                } else if (type === 'connector') {
+                    e.preventDefault();
+                    const connector = this.connectorLookup[id];
+                    if (connector) {
+                        this.startConnectorHandleDrag(connector, e);
+                    }
                 }
             });
-        });
-        obs.observe(document.body, { childList: true, subtree: true });
+
+            this.container.addEventListener('mousemove', (e) => {
+                mousePos.x = e.clientX;
+                mousePos.y = e.clientY;
+                
+                if (this.isDragging && this.dragTarget) {
+                    const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
+                    const x = e.clientX - svgRect.left;
+                    const y = e.clientY - svgRect.top;
+                    
+                    if (this.dragTarget.dragElement) {
+                        this.dragTarget.dragElement.setAttribute('cx', x);
+                        this.dragTarget.dragElement.setAttribute('cy', y);
+                        this.dragTarget.onDrag();
+                    }
+                }
+            });
+
+            this.container.addEventListener('mouseup', (e) => {
+                if (this.isDragging && this.dragTarget) {
+                    this.dragTarget.onDragEnd();
+                    this.isDragging = false;
+                    this.dragTarget = null;
+                }
+            });
+        }
+
+        static startConnectorDrag(port, event) {
+            const connector = port.createConnector();
+            this.isDragging = true;
+            this.dragTarget = connector;
+            
+            // Trigger initial mouse move to set position
+            const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
+            const x = event.clientX - svgRect.left;
+            const y = event.clientY - svgRect.top;
+            
+            connector.dragElement.setAttribute('cx', x);
+            connector.dragElement.setAttribute('cy', y);
+            connector.onDrag();
+        }
+
+        static startConnectorHandleDrag(connector, event) {
+            this.isDragging = true;
+            this.dragTarget = connector;
+        }
+
+        static addComponent(placedComponent, cell) {
+            const component = new GeneticComponent(placedComponent, cell);
+            this.componentLookup[component.id] = component;
+            return component;
+        }
+
+        static removeComponent(cell) {
+            // Find component by cell
+            const component = Object.values(this.componentLookup).find(comp => comp.cell === cell);
+            if (component) {
+                component.remove();
+            }
+        }
+
+        static getComponentsAtPosition(pos) {
+            return Object.values(this.componentLookup).filter(comp => {
+                const rect = comp.element.getBoundingClientRect();
+                const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
+                const compX = rect.left - svgRect.left;
+                const compY = rect.top - svgRect.top;
+                
+                return pos.x >= compX && pos.x <= compX + rect.width &&
+                       pos.y >= compY && pos.y <= compY + rect.height;
+            });
+        }
+
+        static clearAll() {
+            // Remove all connectors
+            Object.values(this.connectorLookup).forEach(connector => connector.remove());
+            
+            // Remove all components
+            Object.values(this.componentLookup).forEach(component => component.remove());
+            
+            // Clear lookups
+            this.componentLookup = {};
+            this.portLookup = {};
+            this.connectorLookup = {};
+            this.connectorPool = [];
+        }
     }
+
+
+
+
 
     // Setup the dial parameters enable/disable toggle
     function setupDialToggle() {
@@ -467,6 +687,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearAllComponents() {
         // Clear state
         state.placedComponents = [];
+        
+        // Clear connector system
+        ConnectorManager.clearAll();
         
         // Clear visuals
         cells.forEach(cell => {
@@ -983,9 +1206,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cell interactions
     function setupCells() {
         cells.forEach(cell => {
-            // Click to place component
+            // Click to place component (only on empty cells)
             cell.addEventListener('click', function() {
-                if (this.classList.contains('functional') && state.currentComponent) {
+                if (this.classList.contains('functional') && state.currentComponent && !this.classList.contains('has-component')) {
                     placeComponent(this);
                 }
             });
@@ -1034,22 +1257,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.addEventListener('dragover', function(e) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'copy';
-                    this.style.backgroundColor = 'rgba(0, 156, 77, 0.2)';
-                    this.style.borderColor = 'var(--primary)';
+                    if (!this.classList.contains('has-component')) {
+                        this.style.backgroundColor = 'rgba(0, 156, 77, 0.2)';
+                        this.style.borderColor = 'var(--primary)';
+                    }
                 });
 
                 cell.addEventListener('dragleave', function() {
-                    this.style.backgroundColor = '';
-                    this.style.borderColor = '';
+                    if (!this.classList.contains('has-component')) {
+                        this.style.backgroundColor = '';
+                        this.style.borderColor = '';
+                    }
                 });
 
                 cell.addEventListener('drop', function(e) {
                     e.preventDefault();
-                    this.style.backgroundColor = '';
-                    this.style.borderColor = '';
-                    
-                    if (state.currentComponent) {
-                        placeComponent(this);
+                    if (!this.classList.contains('has-component')) {
+                        this.style.backgroundColor = '';
+                        this.style.borderColor = '';
+                        
+                        if (state.currentComponent) {
+                            placeComponent(this);
+                        }
                     }
                 });
             }
@@ -1096,6 +1325,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingIndex = state.placedComponents.findIndex(c => c.x === x && c.y === y);
         if (existingIndex >= 0) {
             state.placedComponents.splice(existingIndex, 1);
+            // Remove from connector system
+            ConnectorManager.removeComponent(cell);
             removeComponentVisual(cell);
         }
 
@@ -1111,6 +1342,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         state.placedComponents.push(component);
         updateCellVisual(cell, component);
+
+        // Add to connector system if it's a regulatory component
+        if (['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End'].includes(component.type)) {
+            console.log('Adding component to connector system:', component.type);
+            try {
+                ConnectorManager.addComponent(component, cell);
+                console.log('Component added successfully');
+            } catch (error) {
+                console.error('Error adding component to connector system:', error);
+            }
+        }
 
         // Animation feedback
         cell.classList.add('placed');
@@ -1130,6 +1372,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const index = state.placedComponents.findIndex(c => c.x === x && c.y === y);
         if (index >= 0) {
             state.placedComponents.splice(index, 1);
+            // Remove from connector system
+            ConnectorManager.removeComponent(cell);
             removeComponentVisual(cell);
             console.log('Component removed from:', x, y);
         }
@@ -1163,16 +1407,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.dataset.component = component.type;
         cell.dataset.gene = component.gene;
 
-        // Notify connector systems (jsPlumb or SVG fallback) to attach endpoints/handles
-        // do this in next tick so the DOM is stable and mutation observers have processed
-        setTimeout(() => {
-            if (typeof window.__attachJsPlumbEndpoint === 'function') {
-                try { window.__attachJsPlumbEndpoint(cell); } catch (e) { /* ignore */ }
-            }
-            if (typeof window.__attachSvgHandle === 'function') {
-                try { window.__attachSvgHandle(cell); } catch (e) { /* ignore */ }
-            }
-        }, 0);
+
 
         // Create component display
         const geneNum = component.gene.split(' ')[1];
