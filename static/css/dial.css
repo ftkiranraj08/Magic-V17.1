@@ -9,6 +9,96 @@
     --primary: rgba(178, 243, 95); /* Primary color for buttons, highlights, etc. */
 }
 
+/* Hide strength menus since we're using dynamic parameters instead */
+.strength-menu {
+    display: none !important;
+}
+
+/* Placed component styling */
+.placed-component {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.placed-component:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.placed-component:hover::after {
+    content: "Double-click to rename";
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* Component-specific colors */
+.component-promoter { background-color: #e74c3c; }
+.component-rbs { background-color: #f39c12; }
+.component-cds { background-color: #2ecc71; }
+.component-terminator { background-color: #9b59b6; }
+.component-repressor-start { background-color: #e67e22; }
+.component-repressor-end { background-color: #d35400; }
+.component-activator-start { background-color: #3498db; }
+.component-activator-end { background-color: #2980b9; }
+.component-inducer-start { background-color: #1abc9c; }
+.component-inducer-end { background-color: #16a085; }
+.component-inhibitor-start { background-color: #95a5a6; }
+.component-inhibitor-end { background-color: #7f8c8d; }
+
+/* Component selection feedback */
+.component.selected {
+    border: 3px solid var(--primary) !important;
+    box-shadow: 0 0 15px rgba(178, 243, 95, 0.6) !important;
+    transform: scale(1.05);
+}
+
+/* Placement mode styling */
+.cell-board.placement-mode .cell.placement-ready {
+    background: rgba(178, 243, 95, 0.1) !important;
+    border-color: var(--primary) !important;
+    cursor: crosshair;
+    animation: pulse 1.5s infinite;
+}
+
+.cell-board.placement-mode .cell.placement-ready:hover {
+    background: rgba(178, 243, 95, 0.3) !important;
+    transform: scale(1.05);
+}
+
+/* Pulse animation for placement-ready cells */
+@keyframes pulse {
+    0% { box-shadow: 0 0 5px rgba(178, 243, 95, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(178, 243, 95, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(178, 243, 95, 0.3); }
+}
+
+/* Fade in/out animation for hints */
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
 .lab-logo {
     position: absolute;
     top: 1px;          /* Distance from top */
@@ -198,76 +288,7 @@
     padding-bottom: 0.5rem;
 }
 
-.dial-main .gene-tabs {
-    display: flex;
-    background: rgba(27, 38, 39);
-    border-radius: var(--border-radius);
-    padding: 4px;
-    margin-bottom: 1.5rem;
-    gap: 4px;
-    overflow-x: auto; /* allow horizontal scroll when many tabs */
-    white-space: nowrap; /* prevent wrapping */
-    scroll-behavior: smooth;
-}
-
-.gene-tabs-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.gene-tabs-wrapper .gene-tabs { flex: 1 1 auto; }
-.gene-tabs-wrapper .gene-add-btn { flex: 0 0 auto; }
-
-.gene-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: center;
-}
-.gene-remove-btn, .gene-add-btn {
-    width: 38px;
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    font-size: 1.1rem;
-}
-.gene-remove-btn {
-    background: rgba(220, 53, 69, 0.12);
-    border: 1px solid rgba(220,53,69,0.18);
-    color: #ff6b6b;
-}
-.gene-remove-btn:hover { background: rgba(220, 53, 69, 0.18); }
-
-.dial-main .gene-tab {
-    display: inline-block;
-    padding: 0.5rem 0.9rem;
-    text-align: center;
-    cursor: pointer;
-    border-radius: calc(var(--border-radius) - 4px);
-    background: transparent;
-    border: none;
-    transition: var(--transition);
-    color: var(--bs-light);
-    font-weight: 500;
-    min-width: 70px;
-}
-
-@media (max-width: 720px) {
-    .dial-main .gene-tab { min-width: 54px; padding: 0.4rem 0.6rem; font-size: 0.85rem; }
-}
-
-.dial-main .gene-tab:hover {
-    background: rgba(0, 156, 77, 0.2);
-}
-
-.dial-main .gene-tab.active {
-    background: var(--primary);
-    color: white;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+/* Gene-related styles removed for unified component system */
 
 /* Add button in gene tabs */
 .gene-add-btn {
@@ -289,23 +310,15 @@
 .gene-tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
 .gene-tabs { -webkit-overflow-scrolling: touch; }
 
-.dial-main .gene-components {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.dial-main .gene-panel {
-    display: none;
-    flex-wrap: wrap;
+/* Unified Components Grid */
+.dial-main .components-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 0.75rem;
+    padding: 1rem 0;
 }
 
-.dial-main .gene-panel.active {
-    display: flex;
-}
-
-/* Larger component blocks for dial mode: 100x60px */
+/* Larger component blocks for dial mode: 100px60px */
 .dial-main .component {
     width: 100px;
     height: 60px;
@@ -322,9 +335,18 @@
     position: relative;
 }
 
-/* Template gene panels are hidden from normal flow; clones become visible */
-.gene-panel.template {
-    display: none !important;
+/* Responsive grid for smaller screens */
+@media (max-width: 768px) {
+    .dial-main .components-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .dial-main .component {
+        width: 80px;
+        height: 50px;
+        font-size: 0.75rem;
+    }
 }
 
 /* Style for new gene tabs added dynamically */
@@ -380,9 +402,114 @@
 .dial-main .cell-board h2 {
     color: white;
     font-size: 1.25rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     border-bottom: 3px solid transparent;
     padding-bottom: 0.5rem;
+}
+
+.board-instructions {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--header-subtitle-color);
+    opacity: 0.8;
+}
+
+.board-instructions i {
+    margin-right: 0.5rem;
+}
+
+/* Selection status styling */
+.selection-status {
+    background: rgba(108, 117, 125, 0.1);
+    border: 2px solid rgba(108, 117, 125, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.selection-status.selected {
+    background: rgba(178, 243, 95, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.selection-status i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+}
+
+.selection-status span {
+    font-weight: 500;
+}
+
+/* Interaction mode toggle */
+.interaction-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 8px;
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 6px;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--primary);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .dial-main .grid-container{

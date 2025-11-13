@@ -1,1168 +1,95 @@
-// static/js/script.js
-// Enhanced Genetic Circuit Designer JavaScript with Version 15.3 Integration
+// Simplified Genetic Circuit Designer JavaScript without Gene Tabs System
 
 document.addEventListener('DOMContentLoaded', function() {
-    // State management
+    // Simplified state management
     const state = {
         currentComponent: null,
         currentStrength: 'norm',
-        currentGene: '1',
         placedComponents: [],
+        componentCounts: {}, // For auto-numbering: promoter_1, promoter_2, etc.
         isDragging: false,
-        draggedElement: null
+        draggedElement: null,
+        // Cellboard format matching backend expectations
+        cellboard: {
+            'Promoter': [],
+            'RBS': [],
+            'CDS': [],
+            'Terminator': [],
+            'Repressor Start': [],
+            'Repressor End': [],
+            'Activator Start': [],
+            'Activator End': [],
+            'Inducer Start': [],
+            'Inducer End': [],
+            'Inhibitor Start': [],
+            'Inhibitor End': []
+        }
     };
 
     // DOM elements
-    const geneTabs = document.querySelectorAll('.gene-tab');
-    const genePanels = document.querySelectorAll('.gene-panel');
     const components = document.querySelectorAll('.component');
     const cells = document.querySelectorAll('.cell');
     const simulateBtn = document.getElementById('simulate-btn');
     const clearBtn = document.getElementById('clear-btn');
-    const helpBtn = document.getElementById('help-btn');
     const errorDisplay = document.getElementById('error-display');
     const plotContainer = document.getElementById('plot-container');
-    const dialForm = document.getElementById('dial-form'); // Will be null on index.html
 
     // Initialize the application
     init();
-    
-    // Run automatic test if in debug mode
-    if (window.location.search.includes('test=true')) {
-        setTimeout(() => {
-            console.log('Auto-running hardware data transfer test...');
-            window.testHardwareDataTransfer();
-        }, 1000);
-    }
 
     function init() {
-        setupGeneTabs();
         setupComponents();
         setupCells();
         setupButtons();
         setupDragAndDrop();
-        setupDialToggle();
+        setupGlobalClicks();
+        setupDragModeToggle();
+        updateSelectionStatus(); // Initialize status
+        console.log('Simplified circuit designer initialized successfully');
+    }
 
-        // Initialize connector system after a short delay to ensure DOM is ready
-        setTimeout(() => {
-            console.log('Attempting to initialize ConnectorManager...');
-            try {
-                if (!ConnectorManager.init()) {
-                    console.warn('ConnectorManager initialization failed - connector features disabled');
-                } else {
-                    console.log('ConnectorManager initialized successfully');
+    // Setup global click handler to clear selection
+    function setupGlobalClicks() {
+        document.addEventListener('click', function(e) {
+            // Check if click is outside component palette and board
+            const isComponentClick = e.target.closest('.component');
+            const isBoardClick = e.target.closest('.cell-board');
+            const isPaletteClick = e.target.closest('.component-palette');
+            
+            if (!isComponentClick && !isBoardClick && !isPaletteClick) {
+                // Clear selection if clicking outside
+                if (state.currentComponent) {
+                    clearComponentSelection();
+                    state.currentComponent = null;
+                    state.currentStrength = 'norm';
+                    updateSelectionStatus();
+                    console.log('Selection cleared');
                 }
-            } catch (error) {
-                console.error('Error initializing ConnectorManager:', error);
-            }
-        }, 100);
-
-        setupAddGeneButton();
-    setupRemoveGeneButton();
-        
-        // Initialize with the first available Gene tab active (query dynamically)
-        const firstTab = document.querySelector('#gene-tabs .gene-tab');
-        if (firstTab) {
-            // dispatch a click so the delegated handler activates it
-            firstTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        }
-        
-        // Check for hardware circuit data and load it
-        loadHardwareCircuitData();
-    }
-
-    // ============================
-    // CONNECTOR SYSTEM CLASSES
-    // ============================
-
-    // Genetic Circuit Connector - adapted from sample.js
-    class GeneticConnector {
-        constructor() {
-            this.id = `connector_${++ConnectorManager.nextUid}`;
-            this.dragType = "connector";
-            this.isSelected = false;
-            this.element = ConnectorManager.connectorTemplate.cloneNode(true);
-            this.path = this.element.querySelector(".connector-path");
-            this.pathOutline = this.element.querySelector(".connector-path-outline");
-            this.inputHandle = this.element.querySelector(".input-handle");
-            this.outputHandle = this.element.querySelector(".output-handle");
-            this.inputPort = null;
-            this.outputPort = null;
-            this.staticPort = null;
-            this.dragElement = null;
-            this.staticElement = null;
-            this.isInput = false;
-        }
-
-        init(port) {
-            ConnectorManager.connectionsLayer.appendChild(this.element);
-            this.element.style.display = 'block';
-
-            this.isInput = port.isInput;
-            this.staticPort = port;
-
-            if (port.isInput) {
-                this.inputPort = port;
-                this.dragElement = this.outputHandle;
-                this.staticElement = this.inputHandle;
-            } else {
-                this.outputPort = port;
-                this.dragElement = this.inputHandle;
-                this.staticElement = this.outputHandle;
-            }
-
-            this.staticElement.setAttribute("data-drag", `${port.id}:port`);
-            this.dragElement.setAttribute("data-drag", `${this.id}:connector`);
-
-            // Set initial positions
-            const pos = port.getGlobalPosition();
-            this.inputHandle.setAttribute('cx', pos.x);
-            this.inputHandle.setAttribute('cy', pos.y);
-            this.outputHandle.setAttribute('cx', pos.x);
-            this.outputHandle.setAttribute('cy', pos.y);
-
-            this.updatePath();
-        }
-
-        updatePath() {
-            const x1 = parseFloat(this.inputHandle.getAttribute('cx'));
-            const y1 = parseFloat(this.inputHandle.getAttribute('cy'));
-            const x4 = parseFloat(this.outputHandle.getAttribute('cx'));
-            const y4 = parseFloat(this.outputHandle.getAttribute('cy'));
-
-            const dx = Math.abs(x1 - x4) * 0.4; // bezier weight
-            
-            const p1x = x1, p1y = y1;
-            const p2x = x1 - dx, p2y = y1;
-            const p4x = x4, p4y = y4;
-            const p3x = x4 + dx, p3y = y4;
-
-            const pathData = `M${p1x} ${p1y} C ${p2x} ${p2y} ${p3x} ${p3y} ${p4x} ${p4y}`;
-            this.path.setAttribute("d", pathData);
-            this.pathOutline.setAttribute("d", pathData);
-        }
-
-        updateHandle(port) {
-            const pos = port.getGlobalPosition();
-            
-            if (port === this.inputPort) {
-                this.inputHandle.setAttribute('cx', pos.x);
-                this.inputHandle.setAttribute('cy', pos.y);
-            } else if (port === this.outputPort) {
-                this.outputHandle.setAttribute('cx', pos.x);
-                this.outputHandle.setAttribute('cy', pos.y);
-            }
-
-            this.updatePath();
-        }
-
-        placeHandle() {
-            const dragPos = {
-                x: parseFloat(this.dragElement.getAttribute('cx')),
-                y: parseFloat(this.dragElement.getAttribute('cy'))
-            };
-
-            let targetPort = null;
-            const targetComponents = ConnectorManager.getComponentsAtPosition(dragPos);
-
-            for (let comp of targetComponents) {
-                if (comp === this.staticPort.component) continue; // Skip same component
-                
-                const compatiblePorts = this.isInput ? comp.outputPorts : comp.inputPorts;
-                for (let port of compatiblePorts) {
-                    if (this.isValidConnection(port)) {
-                        const portPos = port.getGlobalPosition();
-                        const distance = Math.sqrt(
-                            Math.pow(dragPos.x - portPos.x, 2) + 
-                            Math.pow(dragPos.y - portPos.y, 2)
-                        );
-                        
-                        if (distance < 20) { // 20px snap distance
-                            targetPort = port;
-                            break;
-                        }
-                    }
-                }
-                if (targetPort) break;
-            }
-
-            if (targetPort) {
-                this.connectToPort(targetPort);
-            } else {
-                this.remove();
-            }
-        }
-
-        connectToPort(port) {
-            if (this.isInput) {
-                this.outputPort = port;
-            } else {
-                this.inputPort = port;
-            }
-
-            this.dragElement.setAttribute("data-drag", `${port.id}:port`);
-            port.addConnector(this);
-            this.updateHandle(port);
-
-            // Check compatibility and validate connection
-            if (this.inputPort && this.outputPort) {
-                if (!this.isValidConnection(port)) {
-                    this.remove();
-                    return;
-                }
-                
-                console.log(`Connected ${this.outputPort.component.type} to ${this.inputPort.component.type}`);
-            }
-        }
-
-        isValidConnection(targetPort) {
-            if (!this.staticPort || !targetPort) return false;
-            
-            const sourceComp = this.staticPort.component;
-            const targetComp = targetPort.component;
-            
-            // Prevent self-connection
-            if (sourceComp === targetComp) return false;
-            
-            // Check if connecting input to output or vice versa
-            if (this.isInput === targetPort.isInput) return false;
-            
-            // Check component type compatibility
-            const sourceType = sourceComp.type;
-            const targetType = targetComp.type;
-            
-            // Repressor Start can only connect to Repressor End
-            if (sourceType === 'Repressor Start' && targetType !== 'Repressor End') return false;
-            if (sourceType === 'Repressor End' && targetType !== 'Repressor Start') return false;
-            
-            // Activator Start can only connect to Activator End
-            if (sourceType === 'Activator Start' && targetType !== 'Activator End') return false;
-            if (sourceType === 'Activator End' && targetType !== 'Activator Start') return false;
-            
-            return true;
-        }
-
-        remove() {
-            if (this.inputPort) {
-                this.inputPort.removeConnector(this);
-            }
-            if (this.outputPort) {
-                this.outputPort.removeConnector(this);
-            }
-
-            this.isSelected = false;
-            this.path.removeAttribute("d");
-            this.pathOutline.removeAttribute("d");
-            this.dragElement.removeAttribute("data-drag");
-            this.staticElement.removeAttribute("data-drag");
-
-            this.staticPort = null;
-            this.inputPort = null;
-            this.outputPort = null;
-            this.dragElement = null;
-            this.staticElement = null;
-
-            if (this.element.parentNode) {
-                this.element.parentNode.removeChild(this.element);
-            }
-            
-            ConnectorManager.connectorPool.push(this);
-        }
-
-        onDrag() {
-            this.updatePath();
-        }
-
-        onDragEnd() {
-            this.placeHandle();
-        }
-    }
-
-    // Component Port - represents connection points on genetic components
-    class ComponentPort {
-        constructor(component, isInput, element) {
-            this.id = `port_${++ConnectorManager.nextUid}`;
-            this.dragType = "port";
-            this.component = component;
-            this.isInput = isInput;
-            this.element = element;
-            this.connectors = [];
-            this.lastConnector = null;
-
-            // Add data attributes
-            this.element.setAttribute("data-drag", `${this.id}:port`);
-            this.element.classList.add(isInput ? 'input-port' : 'output-port');
-        }
-
-        createConnector() {
-            let connector;
-            
-            if (ConnectorManager.connectorPool.length > 0) {
-                connector = ConnectorManager.connectorPool.pop();
-                ConnectorManager.connectorLookup[connector.id] = connector;
-            } else {
-                connector = new GeneticConnector();
-                ConnectorManager.connectorLookup[connector.id] = connector;
-            }
-
-            connector.init(this);
-            this.lastConnector = connector;
-            this.connectors.push(connector);
-            
-            return connector;
-        }
-
-        addConnector(connector) {
-            if (!this.connectors.includes(connector)) {
-                this.connectors.push(connector);
-                this.element.classList.add('connected');
-            }
-        }
-
-        removeConnector(connector) {
-            const index = this.connectors.indexOf(connector);
-            if (index > -1) {
-                this.connectors.splice(index, 1);
-                if (this.connectors.length === 0) {
-                    this.element.classList.remove('connected');
-                }
-            }
-        }
-
-        getGlobalPosition() {
-            const rect = this.element.getBoundingClientRect();
-            const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
-            
-            return {
-                x: rect.left + rect.width/2 - svgRect.left,
-                y: rect.top + rect.height/2 - svgRect.top
-            };
-        }
-
-        update() {
-            for (let connector of this.connectors) {
-                connector.updateHandle(this);
-            }
-        }
-    }
-
-    // Genetic Component - wrapper for placed components with ports
-    class GeneticComponent {
-        constructor(placedComponent, cell) {
-            this.id = `component_${++ConnectorManager.nextUid}`;
-            this.type = placedComponent.type;
-            this.gene = placedComponent.gene;
-            this.strength = placedComponent.strength;
-            this.cell = cell;
-            this.element = cell;
-            this.inputPorts = [];
-            this.outputPorts = [];
-            
-            this.createPorts();
-        }
-
-        createPorts() {
-            // Only regulatory components get ports
-            console.log(`Creating ports for component: ${this.type}`);
-            if (this.type === 'Repressor Start' || this.type === 'Activator Start') {
-                console.log('Creating output port');
-                this.createOutputPort();
-            } else if (this.type === 'Repressor End' || this.type === 'Activator End') {
-                console.log('Creating input port');
-                this.createInputPort();
-            }
-        }
-
-        createOutputPort() {
-            const portElement = document.createElement('div');
-            portElement.className = 'component-port output-port';
-            portElement.title = 'Output Port - Click and drag to connect';
-            this.element.appendChild(portElement);
-            
-            const port = new ComponentPort(this, false, portElement);
-            this.outputPorts.push(port);
-            ConnectorManager.portLookup[port.id] = port;
-            
-            console.log('Output port created and added to cell:', portElement);
-            console.log('Cell has children:', this.element.children.length);
-            return port;
-        }
-
-        createInputPort() {
-            const portElement = document.createElement('div');
-            portElement.className = 'component-port input-port';
-            portElement.title = 'Input Port - Click and drag to connect';
-            this.element.appendChild(portElement);
-            
-            const port = new ComponentPort(this, true, portElement);
-            this.inputPorts.push(port);
-            ConnectorManager.portLookup[port.id] = port;
-            
-            console.log('Input port created and added to cell:', portElement);
-            console.log('Cell has children:', this.element.children.length);
-            return port;
-        }
-
-        updatePorts() {
-            [...this.inputPorts, ...this.outputPorts].forEach(port => port.update());
-        }
-
-        remove() {
-            // Remove all connectors
-            [...this.inputPorts, ...this.outputPorts].forEach(port => {
-                [...port.connectors].forEach(connector => connector.remove());
-            });
-
-            // Remove port elements
-            [...this.inputPorts, ...this.outputPorts].forEach(port => {
-                if (port.element.parentNode) {
-                    port.element.parentNode.removeChild(port.element);
-                }
-                delete ConnectorManager.portLookup[port.id];
-            });
-
-            // Clear arrays
-            this.inputPorts = [];
-            this.outputPorts = [];
-            
-            delete ConnectorManager.componentLookup[this.id];
-        }
-    }
-
-    // Connector Manager - orchestrates the entire connector system
-    class ConnectorManager {
-        static nextUid = 0;
-        static container = null;
-        static connectionsLayer = null;
-        static connectorTemplate = null;
-        static componentLookup = {};
-        static portLookup = {};
-        static connectorLookup = {};
-        static connectorPool = [];
-        static isDragging = false;
-        static dragTarget = null;
-
-    static init() {
-        console.log('ConnectorManager.init() called');
-        this.container = document.querySelector('.grid-container');
-        this.connectionsLayer = document.getElementById('connections-layer');
-        this.connectorTemplate = document.querySelector('.connector-template');
-
-        console.log('Container:', this.container);
-        console.log('Connections layer:', this.connectionsLayer);
-        console.log('Connector template:', this.connectorTemplate);
-
-        if (!this.container || !this.connectionsLayer || !this.connectorTemplate) {
-            console.error('ConnectorManager: Required elements not found');
-            console.error('Container found:', !!this.container);
-            console.error('Connections layer found:', !!this.connectionsLayer);
-            console.error('Connector template found:', !!this.connectorTemplate);
-            return false;
-        }
-
-        this.setupDragHandling();
-        console.log('ConnectorManager setup complete');
-        return true;
-    }        static setupDragHandling() {
-            let mousePos = { x: 0, y: 0 };
-
-            this.container.addEventListener('mousedown', (e) => {
-                const target = e.target;
-                const dragData = target.getAttribute('data-drag');
-                
-                if (!dragData) return;
-                
-                const [id, type] = dragData.split(':');
-                
-                if (type === 'port') {
-                    e.preventDefault();
-                    const port = this.portLookup[id];
-                    if (port) {
-                        this.startConnectorDrag(port, e);
-                    }
-                } else if (type === 'connector') {
-                    e.preventDefault();
-                    const connector = this.connectorLookup[id];
-                    if (connector) {
-                        this.startConnectorHandleDrag(connector, e);
-                    }
-                }
-            });
-
-            this.container.addEventListener('mousemove', (e) => {
-                mousePos.x = e.clientX;
-                mousePos.y = e.clientY;
-                
-                if (this.isDragging && this.dragTarget) {
-                    const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
-                    const x = e.clientX - svgRect.left;
-                    const y = e.clientY - svgRect.top;
-                    
-                    if (this.dragTarget.dragElement) {
-                        this.dragTarget.dragElement.setAttribute('cx', x);
-                        this.dragTarget.dragElement.setAttribute('cy', y);
-                        this.dragTarget.onDrag();
-                    }
-                }
-            });
-
-            this.container.addEventListener('mouseup', (e) => {
-                if (this.isDragging && this.dragTarget) {
-                    this.dragTarget.onDragEnd();
-                    this.isDragging = false;
-                    this.dragTarget = null;
-                }
-            });
-        }
-
-        static startConnectorDrag(port, event) {
-            const connector = port.createConnector();
-            this.isDragging = true;
-            this.dragTarget = connector;
-            
-            // Trigger initial mouse move to set position
-            const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
-            const x = event.clientX - svgRect.left;
-            const y = event.clientY - svgRect.top;
-            
-            connector.dragElement.setAttribute('cx', x);
-            connector.dragElement.setAttribute('cy', y);
-            connector.onDrag();
-        }
-
-        static startConnectorHandleDrag(connector, event) {
-            this.isDragging = true;
-            this.dragTarget = connector;
-        }
-
-        static addComponent(placedComponent, cell) {
-            const component = new GeneticComponent(placedComponent, cell);
-            this.componentLookup[component.id] = component;
-            return component;
-        }
-
-        static removeComponent(cell) {
-            // Find component by cell
-            const component = Object.values(this.componentLookup).find(comp => comp.cell === cell);
-            if (component) {
-                component.remove();
-            }
-        }
-
-        static getComponentsAtPosition(pos) {
-            return Object.values(this.componentLookup).filter(comp => {
-                const rect = comp.element.getBoundingClientRect();
-                const svgRect = document.getElementById('connector-svg').getBoundingClientRect();
-                const compX = rect.left - svgRect.left;
-                const compY = rect.top - svgRect.top;
-                
-                return pos.x >= compX && pos.x <= compX + rect.width &&
-                       pos.y >= compY && pos.y <= compY + rect.height;
-            });
-        }
-
-        static clearAll() {
-            // Remove all connectors
-            Object.values(this.connectorLookup).forEach(connector => connector.remove());
-            
-            // Remove all components
-            Object.values(this.componentLookup).forEach(component => component.remove());
-            
-            // Clear lookups
-            this.componentLookup = {};
-            this.portLookup = {};
-            this.connectorLookup = {};
-            this.connectorPool = [];
-        }
-    }
-
-
-
-
-
-    // Setup the dial parameters enable/disable toggle
-    function setupDialToggle() {
-        const toggle = document.getElementById('enable_dial_params');
-        const dialFormEl = document.getElementById('dial-form');
-        if (!toggle || !dialFormEl) return;
-
-        const container = dialFormEl.querySelector('.dial-accordion') || dialFormEl;
-        const numberInputs = Array.from(dialFormEl.querySelectorAll('input[type="number"]'));
-
-        const setDisabledState = (enabled) => {
-            if (enabled) {
-                container.classList.remove('dial-params-disabled');
-                numberInputs.forEach(i => i.disabled = false);
-            } else {
-                container.classList.add('dial-params-disabled');
-                numberInputs.forEach(i => i.disabled = true);
-            }
-        };
-
-        // initialize
-        setDisabledState(toggle.checked);
-
-        toggle.addEventListener('change', function() {
-            setDisabledState(this.checked);
-        });
-    }
-
-    // Load hardware circuit data from localStorage if available
-    function loadHardwareCircuitData() {
-        const hardwareData = localStorage.getItem('hardwareCircuitData');
-        
-        if (hardwareData) {
-            try {
-                const circuitData = JSON.parse(hardwareData);
-                const cellboard = circuitData.cellboard;
-                
-                if (cellboard && typeof cellboard === 'object') {
-                    console.log('Loading hardware circuit data:', cellboard);
-                    
-                    // Show notification that hardware circuit is being loaded
-                    showHardwareLoadNotification();
-                    
-                    // Convert cellboard format to designer format and place components
-                    setTimeout(() => {
-                        const placedCount = loadCellboardToDesigner(cellboard);
-                        // localStorage is cleared inside loadCellboardToDesigner only on success
-                        if (placedCount === 0) {
-                            console.warn('No components were successfully placed from hardware data');
-                            localStorage.removeItem('hardwareCircuitData'); // Clear if no placement succeeded
-                        }
-                    }, 500); // Small delay to allow UI to initialize
-                }
-            } catch (error) {
-                console.error('Error loading hardware circuit data:', error);
-                localStorage.removeItem('hardwareCircuitData'); // Clear corrupted data
-            }
-        }
-    }
-    
-    // Show notification that hardware circuit is being loaded
-    function showHardwareLoadNotification() {
-        showNotification('Loading circuit from Cell Board...', 'success', 'microchip');
-    }
-    
-    // Show error notification
-    function showErrorNotification(message) {
-        showNotification(message, 'error', 'exclamation-triangle');
-    }
-    
-    // Generic notification function
-    function showNotification(message, type = 'info', icon = 'info-circle') {
-        const colors = {
-            success: '#28a745',
-            error: '#dc3545', 
-            warning: '#ffc107',
-            info: '#17a2b8'
-        };
-        
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${colors[type] || colors.info};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 1000;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-width: 300px;
-        `;
-        notification.innerHTML = `<i class="fas fa-${icon} me-2"></i>${message}`;
-        
-        document.body.appendChild(notification);
-        
-        // Remove after 4 seconds for errors, 3 seconds for others
-        const timeout = type === 'error' ? 4000 : 3000;
-        setTimeout(() => {
-            notification.remove();
-        }, timeout);
-    }
-    
-    // Clear all components without confirmation (for programmatic use)
-    function clearAllComponents() {
-        // Clear state
-        state.placedComponents = [];
-        
-        // Clear connector system
-        ConnectorManager.clearAll();
-        
-        // Clear visuals
-        cells.forEach(cell => {
-            removeComponentVisual(cell);
-        });
-        
-        console.log('All components cleared programmatically');
-    }
-    
-    // Test function to verify data transfer functionality
-    window.testHardwareDataTransfer = function() {
-        console.log('=== Testing Hardware Data Transfer ===');
-        
-        // Create mock cellboard data that simulates hardware output
-        const mockCellboard = {
-            'Promoter': [
-                { gene: '1', strength: 'strong', x: '0', y: '0' },
-                { gene: 'Gene 2', strength: 'norm', x: '2', y: '1' }
-            ],
-            'RBS': [
-                { gene: '1', strength: 'norm', x: '1', y: '0' }
-            ],
-            'CDS': [
-                { gene: '1', strength: 'weak', x: '2', y: '0' },
-                { gene: '2', strength: 'strong', x: '3', y: '1' }
-            ],
-            'Terminator': [
-                { gene: '1', strength: 'norm', x: '3', y: '0' }
-            ]
-        };
-        
-        console.log('1. Testing localStorage save/load format...');
-        const testData = {
-            cellboard: mockCellboard,
-            timestamp: Date.now(),
-            source: 'test_hardware'
-        };
-        
-        // Test localStorage save
-        localStorage.setItem('hardwareCircuitData', JSON.stringify(testData));
-        console.log('✓ Data saved to localStorage');
-        
-        // Test data loading
-        console.log('2. Testing loadCellboardToDesigner function...');
-        const placedCount = loadCellboardToDesigner(mockCellboard);
-        console.log(`✓ Placed ${placedCount} components`);
-        
-        // Test gene format handling
-        console.log('3. Verifying gene format normalization...');
-        state.placedComponents.forEach(comp => {
-            console.log(`  Component: ${comp.type}, Gene: ${comp.gene}, Position: (${comp.x}, ${comp.y})`);
-            if (!comp.gene.startsWith('Gene ')) {
-                console.error(`✗ Gene format error: ${comp.gene} should start with 'Gene '`);
-            } else {
-                console.log(`  ✓ Gene format correct: ${comp.gene}`);
             }
         });
-        
-        // Test placement function usage
-        console.log('4. Verifying placement integrity...');
-        const cellsWithComponents = document.querySelectorAll('.cell.has-component');
-        console.log(`  Visual components: ${cellsWithComponents.length}`);
-        console.log(`  State components: ${state.placedComponents.length}`);
-        
-        if (cellsWithComponents.length === state.placedComponents.length) {
-            console.log('  ✓ Visual and state components match');
-        } else {
-            console.error('  ✗ Mismatch between visual and state components');
-        }
-        
-        // Test localStorage clearing after successful placement
-        console.log('5. Testing localStorage cleanup...');
-        const remainingData = localStorage.getItem('hardwareCircuitData');
-        if (!remainingData) {
-            console.log('  ✓ localStorage cleared after successful placement');
-        } else {
-            console.error('  ✗ localStorage not cleared properly');
-        }
-        
-        console.log('=== Hardware Data Transfer Test Complete ===');
-        return {
-            placedCount,
-            stateComponents: state.placedComponents.length,
-            visualComponents: cellsWithComponents.length,
-            localStorageCleared: !remainingData
-        };
-    };
-    
-    // Make test available globally for debugging
-    window.debugDataTransfer = function() {
-        console.log('Current state:', {
-            placedComponents: state.placedComponents,
-            currentComponent: state.currentComponent,
-            currentGene: state.currentGene,
-            currentStrength: state.currentStrength
-        });
-        
-        console.log('Visual grid state:');
-        document.querySelectorAll('.cell.has-component').forEach(cell => {
-            console.log(`  Cell (${cell.dataset.x}, ${cell.dataset.y}): ${cell.textContent}`);
-        });
-    };
-    
-    // Convert cellboard format to designer format and place components
-    function loadCellboardToDesigner(cellboard) {
-        let successfulPlacements = 0;
-        let totalComponents = 0;
-        
-        // Clear existing components first
-        clearAllComponents();
-        
-        // Mapping of cellboard component types to designer component types
-        const componentTypeMap = {
-            'Promoter': 'Promoter',
-            'RBS': 'RBS', 
-            'CDS': 'CDS',
-            'Terminator': 'Terminator',
-            'Repressor Start': 'Repressor Start',
-            'Repressor End': 'Repressor End',
-            'Activator Start': 'Activator Start',
-            'Activator End': 'Activator End',
-            'Inducer': 'Inducer'
-        };
-        
-        try {
-            // Process each component type from cellboard
-            Object.entries(cellboard).forEach(([componentType, componentList]) => {
-                if (Array.isArray(componentList)) {
-                    componentList.forEach(comp => {
-                        totalComponents++;
-                        const designerType = componentTypeMap[componentType];
-                        if (designerType) {
-                            // Find the cell at the specified position
-                            const cell = document.querySelector(`[data-x="${comp.x}"][data-y="${comp.y}"]`);
-                            if (cell && cell.classList.contains('functional')) {
-                                // Normalize gene format - ensure it's "Gene X" format
-                                let geneIdentifier;
-                                if (comp.gene && comp.gene.startsWith('Gene ')) {
-                                    geneIdentifier = comp.gene; // Already in correct format
-                                } else if (comp.gene && /^\d+$/.test(comp.gene.toString())) {
-                                    geneIdentifier = `Gene ${comp.gene}`; // Convert "1" to "Gene 1"
-                                } else {
-                                    geneIdentifier = 'Gene 1'; // Default fallback
-                                }
-                                
-                                // Set up state for placement
-                                state.currentComponent = designerType;
-                                state.currentGene = geneIdentifier.split(' ')[1]; // Extract number part
-                                state.currentStrength = comp.strength || 'norm';
-                                
-                                // Use proper placement function to maintain invariants
-                                placeComponent(cell);
-                                successfulPlacements++;
-                                
-                                console.log('Placed hardware component:', {
-                                    type: designerType,
-                                    gene: geneIdentifier,
-                                    strength: comp.strength || 'norm',
-                                    x: comp.x,
-                                    y: comp.y
-                                });
-                            } else {
-                                console.warn(`Cannot place component at (${comp.x}, ${comp.y}): cell not found or not functional`);
-                            }
-                        } else {
-                            console.warn(`Unknown component type: ${componentType}`);
-                        }
-                    });
-                }
-            });
-            
-            console.log(`Successfully loaded ${successfulPlacements}/${totalComponents} components from Cell Board`);
-            
-            // Only clear localStorage after successful placement
-            if (successfulPlacements > 0) {
-                localStorage.removeItem('hardwareCircuitData');
-                console.log('Hardware circuit data cleared from localStorage after successful transfer');
-            }
-            
-            // After placement, ensure UI reflects number of genes found
-            try {
-                const maxGene = state.placedComponents.reduce((max, c) => {
-                    const n = parseInt((c.gene || 'Gene 1').toString().split(' ')[1]) || 1;
-                    return Math.max(max, n);
-                }, 1);
-                ensureGenesUI(maxGene);
-                ensureGeneParameterSections(maxGene);
-            } catch (e) {
-                console.warn('Error ensuring dynamic gene UI:', e);
-            }
-
-            return successfulPlacements;
-            
-        } catch (error) {
-            console.error('Error loading hardware circuit data:', error);
-            showErrorNotification('Failed to load some components from Cell Board');
-            return successfulPlacements;
-        }
-    }
-
-    // Create or reveal gene tabs and panels up to maxGene
-    function ensureGenesUI(maxGene) {
-        const tabsContainer = document.getElementById('gene-tabs');
-        const componentsContainer = document.getElementById('gene-components');
-        if (!tabsContainer || !componentsContainer) return;
-
-        // find the template panel to clone (prefer the one with class template)
-        const templatePanel = componentsContainer.querySelector('.gene-panel.template') || componentsContainer.querySelector('.gene-panel');
-    for (let i = 1; i <= maxGene; i++) {
-            // Create tab if missing
-            if (!tabsContainer.querySelector(`.gene-tab[data-gene="${i}"]`)) {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'gene-tab';
-                if (i === 1) btn.classList.add('active');
-                btn.dataset.gene = String(i);
-                btn.setAttribute('role', 'tab');
-                btn.setAttribute('aria-selected', i === 1 ? 'true' : 'false');
-                btn.textContent = `Gene ${i}`;
-                // attach a direct handler so newly-created tabs work even if delegation missed
-                btn.addEventListener('click', function(e) {
-                    activateGeneTab(this);
-                });
-                tabsContainer.appendChild(btn);
-            }
-
-            // Create panel if missing
-            if (!componentsContainer.querySelector(`.gene-panel[data-gene="${i}"]`)) {
-                if (!templatePanel) continue;
-                const clone = templatePanel.cloneNode(true);
-                clone.classList.remove('template');
-                // remove any 'active' class unless it's gene 1
-                clone.classList.toggle('active', i === 1);
-                clone.dataset.gene = String(i);
-                // update internal components' data-gene attributes
-                clone.querySelectorAll('.component').forEach(comp => {
-                    comp.dataset.gene = String(i);
-                    // update inner markup if any references to gene present (not common)
-                });
-                componentsContainer.appendChild(clone);
-            }
-        }
-
-        // Re-attach gene tab handlers
-        setupGeneTabs();
-        // Re-attach component handlers for any newly cloned components
-        setupComponents();
-        // Update tab density (compact mode) when many genes exist
-        updateGeneTabDensity();
-    }
-
-    // Helper to activate a gene tab element
-    function activateGeneTab(tab) {
-        if (!tab) return;
-        // Deactivate all tabs and panels (also unset aria-selected)
-            deactivateAllTabsAndPanels();
-            activateTargetTab(tab);
-        }
-
-        function deactivateAllTabsAndPanels() {
-            document.querySelectorAll('.gene-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
-            document.querySelectorAll('.gene-panel').forEach(p => p.classList.remove('active'));
-        }
-
-        function activateTargetTab(tab) {
-            tab.classList.add('active');
-            tab.setAttribute('aria-selected', 'true');
-            const gene = tab.dataset.gene;
-            state.currentGene = gene;
-            const targetPanel = document.querySelector(`.gene-panel[data-gene="${gene}"]`);
-            if (targetPanel) targetPanel.classList.add('active');
-    }
-
-    // Add gene button wiring
-    function setupAddGeneButton() {
-        const addBtn = document.getElementById('add-gene-btn');
-        if (!addBtn) return;
-        addBtn.addEventListener('click', function() {
-            // determine current highest gene
-            const existingTabs = Array.from(document.querySelectorAll('.gene-tab')).map(b => parseInt(b.dataset.gene || '1'));
-            const max = existingTabs.length ? Math.max(...existingTabs) : 1;
-            const next = max + 1;
-            ensureGenesUI(next);
-            ensureGeneParameterSections(next);
-            // activate the new tab
-            const newTab = document.querySelector(`.gene-tab[data-gene="${next}"]`);
-            if (newTab) {
-                // dispatch a bubbling click so delegated listener handles it reliably
-                newTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-                // smooth scroll so the tab is visible when many tabs exist
-                try { newTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
-                // adjust tab density after adding
-                updateGeneTabDensity();
-            }
-        });
-    }
-
-    // Remove gene button wiring
-    function setupRemoveGeneButton() {
-        const removeBtn = document.getElementById('remove-gene-btn');
-        if (!removeBtn) return;
-        removeBtn.addEventListener('click', function() {
-            // Find highest gene number
-            const tabs = Array.from(document.querySelectorAll('.gene-tab')).map(b => parseInt(b.dataset.gene || '1')).filter(n => !isNaN(n));
-            if (tabs.length <= 1) return; // nothing to remove (keep gene 1)
-            const max = Math.max(...tabs);
-            if (max <= 1) return;
-
-            // Remove UI: tab, panel, and parameter section
-            const tab = document.querySelector(`.gene-tab[data-gene="${max}"]`);
-            const panel = document.querySelector(`.gene-panel[data-gene="${max}"]`);
-            const paramSummary = Array.from(document.querySelectorAll('.dial-accordion-item')).find(det => {
-                const s = det.querySelector('.dial-accordion-header');
-                return s && s.textContent.trim().match(new RegExp(`Gene\\s*${max}`));
-            });
-
-            // Reassign placed components for this gene to Gene 1 to avoid losing them
-            state.placedComponents.forEach(c => {
-                const geneNum = parseInt((c.gene || 'Gene 1').split(' ')[1]) || 1;
-                if (geneNum === max) {
-                    c.gene = 'Gene 1';
-                }
-            });
-
-            // Update visuals on board where necessary
-            document.querySelectorAll('.cell.has-component').forEach(cell => {
-                const text = (cell.textContent || '').trim();
-                const m = text.match(/^(\d+):/);
-                if (m && parseInt(m[1]) === max) {
-                    // change displayed gene number to 1
-                    const rest = text.replace(/^\d+:/, '1:');
-                    cell.firstChild && (cell.firstChild.textContent = rest);
-                    cell.textContent = rest; // simpler approach
-                }
-            });
-
-            if (tab) tab.remove();
-            if (panel) panel.remove();
-            if (paramSummary) paramSummary.remove();
-
-            // Activate the previous highest tab
-            const remaining = Array.from(document.querySelectorAll('.gene-tab')).map(b => parseInt(b.dataset.gene || '1'));
-            const newMax = remaining.length ? Math.max(...remaining) : 1;
-            const newTab = document.querySelector(`.gene-tab[data-gene="${newMax}"]`);
-            if (newTab) activateGeneTab(newTab);
-            // update compact/normal density after removal
-            updateGeneTabDensity();
-        });
-    }
-
-    // Reduce tab padding/min-width when many genes are present so layout doesn't expand
-    function updateGeneTabDensity() {
-        const wrapper = document.querySelector('.gene-tabs-wrapper');
-        if (!wrapper) return;
-        const tabCount = document.querySelectorAll('.gene-tab').length;
-        // Toggle a class that makes tabs more compact when there are many of them
-        if (tabCount > 10) {
-            wrapper.classList.add('many-genes');
-        } else {
-            wrapper.classList.remove('many-genes');
-        }
-    }
-
-    // Add parameter sections (accordion details) for genes beyond the static ones
-    function ensureGeneParameterSections(maxGene) {
-        const dialFormEl = document.getElementById('dial-form');
-        if (!dialFormEl) return;
-        const accordion = dialFormEl.querySelector('.dial-accordion');
-        if (!accordion) return;
-
-        // Helper to create a details block for a gene
-        function createGeneDetails(n) {
-            const d = document.createElement('details');
-            d.className = 'dial-accordion-item';
-            const s = document.createElement('summary');
-            s.className = 'dial-accordion-header';
-            s.textContent = `Gene ${n} Components`;
-            d.appendChild(s);
-
-            const body = document.createElement('div');
-            body.className = 'dial-accordion-body';
-            const grid = document.createElement('div');
-            grid.className = 'dial-grid';
-
-            const fields = [
-                ['Promoter Strength', `promoter${n}_strength`, '1.0', '0.1', '5.0', '0.1'],
-                ['RBS Efficiency', `rbs${n}_efficiency`, '1.0', '0.1', '2.0', '0.1'],
-                ['CDS Translation Rate', `cds${n}_translation_rate`, '5.0', '1.0', '20.0', '0.5'],
-                ['CDS Degradation Rate', `cds${n}_degradation_rate`, '0.1', '0.01', '1.0', '0.01'],
-                ['Terminator Eff', `terminator${n}_efficiency`, '0.99', '0.1', '1.0', '0.01'],
-                ['Initial Protein Conc', `protein${n}_initial_conc`, '0.1', '0.0', '2.0', '0.05']
-            ];
-
-            fields.forEach(([label, name, value, min, max, step]) => {
-                const lab = document.createElement('label');
-                lab.setAttribute('for', name);
-                lab.textContent = label + ':';
-                const inp = document.createElement('input');
-                inp.type = 'number';
-                inp.id = name;
-                inp.name = name;
-                inp.value = value;
-                inp.min = min;
-                inp.max = max;
-                inp.step = step;
-                grid.appendChild(lab);
-                grid.appendChild(inp);
-            });
-
-            body.appendChild(grid);
-            d.appendChild(body);
-            return d;
-        }
-
-        // Determine existing gene detail numbers
-        const existing = Array.from(accordion.querySelectorAll('.dial-accordion-item')).map(det => {
-            const summary = det.querySelector('.dial-accordion-header');
-            if (!summary) return 0;
-            const m = summary.textContent.match(/Gene\s*(\d+)/i);
-            return m ? parseInt(m[1]) : 0;
-        }).filter(n => n > 0);
-        const maxExisting = existing.length ? Math.max(...existing) : 1;
-
-        for (let i = 1; i <= maxGene; i++) {
-            if (i <= maxExisting) continue; // already present
-            const details = createGeneDetails(i);
-            accordion.appendChild(details);
-        }
-    }
-
-    // Gene tab functionality
-    function setupGeneTabs() {
-        const tabsContainer = document.getElementById('gene-tabs');
-        if (!tabsContainer) return;
-        if (tabsContainer._geneListenerAttached) return; // idempotent
-
-        tabsContainer.addEventListener('click', function(e) {
-            const tab = e.target.closest('.gene-tab');
-            if (!tab || !tabsContainer.contains(tab)) return;
-
-            // Deactivate all tabs and panels
-            document.querySelectorAll('.gene-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.gene-panel').forEach(p => p.classList.remove('active'));
-
-            // Activate clicked tab
-            tab.classList.add('active');
-            const gene = tab.dataset.gene;
-            state.currentGene = gene;
-
-            const targetPanel = document.querySelector(`.gene-panel[data-gene="${gene}"]`);
-            if (targetPanel) targetPanel.classList.add('active');
-        });
-
-        tabsContainer._geneListenerAttached = true;
     }
 
     // Component selection and strength menu
     function setupComponents() {
-        // Re-query components live so newly cloned panels are included
-        const liveComponents = document.querySelectorAll('.component');
-        liveComponents.forEach(comp => {
-            if (comp._setupDone) return; // avoid double-binding
-            comp._setupDone = true;
-            // Make components draggable
-            comp.setAttribute('draggable', 'true');
-            
+        components.forEach(comp => {
             // Component click for selection and strength menu
             comp.addEventListener('click', function(e) {
                 e.stopPropagation();
-                state.currentComponent = this.dataset.component;
-                state.currentGene = this.dataset.gene;
                 
-                // Handle strength menu if it exists
+                // Clear previous selection
+                clearComponentSelection();
+                
+                // Set current component
+                state.currentComponent = this.dataset.component;
+                state.currentStrength = 'norm'; // Default strength
+                
+                // Add selected state
+                this.classList.add('selected');
+                
+                // Show placement mode on board
+                showPlacementMode();
+                
+                // Handle strength menu if it exists (will be commented out, so default to 'norm')
                 const menu = this.querySelector('.strength-menu');
                 if (menu) {
                     // Hide all other menus
@@ -1179,6 +106,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => {
                     this.style.transform = '';
                 }, 150);
+                
+                // Update selection status
+                updateSelectionStatus();
+                
+                console.log(`Selected component: ${state.currentComponent}`);
             });
 
             // Strength selection
@@ -1198,935 +130,747 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         });
-        // update the global components NodeList reference for other functions
-        // (optional) but keep original variable to avoid undefined elsewhere
-        // components = document.querySelectorAll('.component'); // don't overwrite const
     }
 
-    // Cell interactions
+    // Cell board interaction
     function setupCells() {
         cells.forEach(cell => {
-            // Click to place component (only on empty cells)
-            cell.addEventListener('click', function() {
-                if (this.classList.contains('functional') && state.currentComponent && !this.classList.contains('has-component')) {
-                    placeComponent(this);
+            // Click to place selected component
+            cell.addEventListener('click', function(e) {
+                if (state.currentComponent) {
+                    const x = parseInt(this.dataset.x);
+                    const y = parseInt(this.dataset.y);
+                    
+                    // Check if cell is already occupied
+                    if (this.classList.contains('filled')) {
+                        removeComponent(x, y);
+                    } else {
+                        // Place the component - use 'norm' as default strength when strength menus are commented out
+                        const strength = state.currentStrength || 'norm';
+                        placeComponent(x, y, state.currentComponent, strength);
+                        
+                                // Clear selection after placing
+                        clearComponentSelection();
+                        state.currentComponent = null;
+                        state.currentStrength = 'norm';
+                        updateSelectionStatus();
+                    }
+                } else {
+                    // No component selected - show message
+                    showSelectionHint();
                 }
             });
-
+            
             // Right-click to remove component
             cell.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
-                if (this.classList.contains('has-component')) {
-                    removeComponent(this);
+                const x = parseInt(this.dataset.x);
+                const y = parseInt(this.dataset.y);
+                removeComponent(x, y);
+            });
+        });
+    }
+
+    // Dynamic parameter section creation
+    function createDynamicParameterSection(componentType, componentNumber) {
+        const dialAccordion = document.querySelector('.dial-accordion');
+        if (!dialAccordion) return;
+        
+        // Skip parameter sections for regulator components (they use constants from constants.py)
+        const regulatorTypes = ['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End', 
+                               'Inducer Start', 'Inducer End', 'Inhibitor Start', 'Inhibitor End'];
+        if (regulatorTypes.includes(componentType)) {
+            console.log(`Skipping parameter section for regulator component: ${componentType}`);
+            return;
+        }
+        
+        // Create unique ID for this component instance
+        const baseType = componentType.toLowerCase().replace(' ', '_');
+        const sectionId = `${baseType}_${componentNumber}`;
+        
+        // Check if section already exists
+        if (document.getElementById(`section_${sectionId}`)) {
+            return; // Already exists
+        }
+        
+        // Create the parameter section
+        const section = document.createElement('details');
+        section.className = 'dial-accordion-item';
+        section.id = `section_${sectionId}`;
+        
+        const summary = document.createElement('summary');
+        summary.className = 'dial-accordion-header';
+        summary.textContent = `${componentType} ${componentNumber} Parameters`;
+        
+        const body = document.createElement('div');
+        body.className = 'dial-accordion-body';
+        
+        const grid = document.createElement('div');
+        grid.className = 'dial-grid';
+        
+        // Generate parameters based on component type
+        const parameters = getComponentParameters(componentType, componentNumber);
+        
+        parameters.forEach(param => {
+            const label = document.createElement('label');
+            label.setAttribute('for', param.id);
+            label.textContent = param.label;
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = param.id;
+            input.name = param.id;
+            input.min = param.min;
+            input.max = param.max;
+            input.step = param.step;
+            input.value = param.defaultValue;
+            
+            if (param.title) {
+                input.title = param.title;
+            }
+            
+            grid.appendChild(label);
+            grid.appendChild(input);
+        });
+        
+        body.appendChild(grid);
+        section.appendChild(summary);
+        section.appendChild(body);
+        
+        // Insert before the last section (or at the end)
+        dialAccordion.appendChild(section);
+        
+        console.log(`Created parameter section for ${componentType} ${componentNumber}`);
+    }
+    
+    // Get parameters for a specific component type
+    function getComponentParameters(componentType, componentNumber) {
+        // Skip parameters for regulator components
+        const regulatorTypes = ['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End', 
+                               'Inducer Start', 'Inducer End', 'Inhibitor Start', 'Inhibitor End'];
+        if (regulatorTypes.includes(componentType)) {
+            return [];
+        }
+        
+        const baseType = componentType.toLowerCase().replace(' ', '_');
+        const num = componentNumber;
+        
+        const commonParams = {
+            'Promoter': [
+                {
+                    id: `promoter${num}_strength`,
+                    label: 'Promoter Strength:',
+                    min: 0.1,
+                    max: 5.0,
+                    step: 0.1,
+                    defaultValue: 1.0
                 }
-            });
-        });
+            ],
+            'RBS': [
+                {
+                    id: `rbs${num}_efficiency`,
+                    label: 'RBS Efficiency:',
+                    min: 0.1,
+                    max: 2.0,
+                    step: 0.1,
+                    defaultValue: 1.0
+                }
+            ],
+            'CDS': [
+                {
+                    id: `cds${num}_translation_rate`,
+                    label: 'CDS Translation Rate:',
+                    min: 1.0,
+                    max: 20.0,
+                    step: 0.5,
+                    defaultValue: 5.0
+                },
+                {
+                    id: `cds${num}_degradation_rate`,
+                    label: 'CDS Degradation Rate:',
+                    min: 0.01,
+                    max: 1.0,
+                    step: 0.01,
+                    defaultValue: 0.1
+                },
+                {
+                    id: `protein${num}_initial_conc`,
+                    label: 'Initial Protein Conc:',
+                    min: 0.0,
+                    max: 2.0,
+                    step: 0.05,
+                    defaultValue: 0.1,
+                    title: 'Starting concentration (µM) - affects oscillation dynamics'
+                }
+            ],
+            'Terminator': [
+                {
+                    id: `terminator${num}_efficiency`,
+                    label: 'Terminator Efficiency:',
+                    min: 0.1,
+                    max: 1.0,
+                    step: 0.01,
+                    defaultValue: 0.99
+                }
+            ]
+        };
+        
+        return commonParams[componentType] || [];
     }
 
-    // Setup drag and drop functionality
-    function setupDragAndDrop() {
-        // Dragstart for components
-        components.forEach(comp => {
-            comp.addEventListener('dragstart', function(e) {
-                state.isDragging = true;
-                state.draggedElement = this;
-                state.currentComponent = this.dataset.component;
-                state.currentGene = this.dataset.gene;
-                
-                // Set drag image
-                e.dataTransfer.effectAllowed = 'copy';
-                e.dataTransfer.setData('text/plain', JSON.stringify({
-                    component: this.dataset.component,
-                    gene: this.dataset.gene
-                }));
-                
-                // Visual feedback
-                this.style.opacity = '0.5';
-            });
-
-            comp.addEventListener('dragend', function() {
-                state.isDragging = false;
-                state.draggedElement = null;
-                this.style.opacity = '';
-            });
-        });
-
-        // Drop zones (cells)
-        cells.forEach(cell => {
-            if (cell.classList.contains('functional')) {
-                cell.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                    if (!this.classList.contains('has-component')) {
-                        this.style.backgroundColor = 'rgba(0, 156, 77, 0.2)';
-                        this.style.borderColor = 'var(--primary)';
-                    }
-                });
-
-                cell.addEventListener('dragleave', function() {
-                    if (!this.classList.contains('has-component')) {
-                        this.style.backgroundColor = '';
-                        this.style.borderColor = '';
-                    }
-                });
-
-                cell.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    if (!this.classList.contains('has-component')) {
-                        this.style.backgroundColor = '';
-                        this.style.borderColor = '';
-                        
-                        if (state.currentComponent) {
-                            placeComponent(this);
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-    // Button event handlers
-    function setupButtons() {
-        if (simulateBtn) {
-            simulateBtn.addEventListener('click', runSimulation);
+    // Component placement logic
+    function placeComponent(x, y, componentType, strength = 'norm') {
+        // Auto-increment component number based on type
+        const baseType = componentType.toLowerCase().replace(' ', '_');
+        if (!state.componentCounts[baseType]) {
+            state.componentCounts[baseType] = 1;
+        } else {
+            state.componentCounts[baseType]++;
         }
 
-        if (clearBtn) {
-            clearBtn.addEventListener('click', clearBoard);
-        }
-
-        const exportBtn = document.getElementById('export-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', exportProject);
-        }
-
-        if (helpBtn) {
-            helpBtn.addEventListener('click', showHelp);
-        }
-
-        // Close strength menus when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.component') && !e.target.closest('.strength-menu')) {
-                document.querySelectorAll('.strength-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-        });
-    }
-
-    // Place component on board
-    function placeComponent(cell) {
-        if (!state.currentComponent) return;
-
-        const x = cell.dataset.x;
-        const y = cell.dataset.y;
-
-        // Remove existing component from this cell
-        const existingIndex = state.placedComponents.findIndex(c => c.x === x && c.y === y);
-        if (existingIndex >= 0) {
-            state.placedComponents.splice(existingIndex, 1);
-            // Remove from connector system
-            ConnectorManager.removeComponent(cell);
-            removeComponentVisual(cell);
-        }
-
-        // Create new component
         const component = {
-            type: state.currentComponent,
-            gene: `Gene ${state.currentGene}`,
-            strength: state.currentStrength,
             x: x,
             y: y,
-            id: `${state.currentComponent}_${x}_${y}`
+            type: componentType,
+            strength: strength,
+            id: Date.now() + Math.random(), // Unique ID
+            number: state.componentCounts[baseType] // For display
         };
+        
+        // Add to cellboard in backend-compatible format
+        if (!state.cellboard[componentType]) {
+            state.cellboard[componentType] = [];
+        }
+        state.cellboard[componentType].push(component);
+        
+        // Create dynamic parameter section for this component
+        createDynamicParameterSection(componentType, state.componentCounts[baseType]);
+        
+        // Update visual representation
+        updateCellDisplay(x, y, componentType, state.componentCounts[baseType]);
+        
+        console.log(`Placed ${componentType} #${state.componentCounts[baseType]} at (${x}, ${y})`);
+        return component;
+    }
 
-        state.placedComponents.push(component);
-        updateCellVisual(cell, component);
-
-        // Add to connector system if it's a regulatory component
-        if (['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End'].includes(component.type)) {
-            console.log('Adding component to connector system:', component.type);
-            try {
-                ConnectorManager.addComponent(component, cell);
-                console.log('Component added successfully');
-            } catch (error) {
-                console.error('Error adding component to connector system:', error);
+    function removeComponent(x, y) {
+        // Find and remove component at this position
+        let removed = null;
+        
+        for (const [type, components] of Object.entries(state.cellboard)) {
+            const index = components.findIndex(comp => comp.x === x && comp.y === y);
+            if (index !== -1) {
+                removed = components.splice(index, 1)[0];
+                break;
             }
         }
-
-        // Animation feedback
-        cell.classList.add('placed');
-        setTimeout(() => {
-            cell.classList.remove('placed');
-        }, 300);
-
-        console.log('Component placed:', component);
-        console.log('Total components:', state.placedComponents.length);
+        
+        if (removed) {
+            // Remove corresponding parameter section
+            removeDynamicParameterSection(removed.type, removed.number);
+            
+            // Clear visual representation
+            const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (cell) {
+                cell.innerHTML = '';
+                cell.classList.remove('filled');
+            }
+            console.log(`Removed ${removed.type} from (${x}, ${y})`);
+        }
+        
+        return removed;
     }
-
-    // Remove component from board
-    function removeComponent(cell) {
-        const x = cell.dataset.x;
-        const y = cell.dataset.y;
-
-        const index = state.placedComponents.findIndex(c => c.x === x && c.y === y);
-        if (index >= 0) {
-            state.placedComponents.splice(index, 1);
-            // Remove from connector system
-            ConnectorManager.removeComponent(cell);
-            removeComponentVisual(cell);
-            console.log('Component removed from:', x, y);
+    
+    // Remove dynamic parameter section
+    function removeDynamicParameterSection(componentType, componentNumber) {
+        const baseType = componentType.toLowerCase().replace(' ', '_');
+        const sectionId = `section_${baseType}_${componentNumber}`;
+        const section = document.getElementById(sectionId);
+        
+        if (section) {
+            section.remove();
+            console.log(`Removed parameter section for ${componentType} ${componentNumber}`);
         }
     }
 
-    // Update cell visual appearance
-    function updateCellVisual(cell, component) {
-        const colors = {
-            'Promoter': '#FF6B6B',
-            'Terminator': '#4ECDC4',
-            'RBS': '#FFD166',
-            'CDS': '#06D6A0',
-            'Repressor Start': '#A78BFA',
-            'Repressor End': '#7E22CE',
-            'Activator Start': '#3B82F6',
-            'Activator End': '#1E40AF',
-            'Inducer': '#FF69B4'
-        };
-
-        // Clear existing content
+    function updateCellDisplay(x, y, componentType, componentNumber, customName = null) {
+        const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+        if (!cell) return;
+        
+        // Clear previous content
         cell.innerHTML = '';
+        cell.classList.add('filled');
         
-        // Set visual properties
-        cell.style.backgroundColor = colors[component.type] || '#999';
-        cell.style.color = 'white';
-        cell.style.fontWeight = '600';
-        cell.classList.add('has-component');
-
-        // Mark cell as a node for jsPlumb
-        cell.classList.add('component-node');
-        cell.dataset.component = component.type;
-        cell.dataset.gene = component.gene;
-
-
-
-        // Create component display
-        const geneNum = component.gene.split(' ')[1];
-        const compAbbr = getComponentAbbreviation(component.type);
-        cell.textContent = `${geneNum}:${compAbbr}`;
-
-        // Add strength indicator
-        const strengthDot = document.createElement('div');
-        strengthDot.className = `strength-dot strength-${component.strength}`;
-        strengthDot.style.backgroundColor = getStrengthColor(component.strength);
-        cell.appendChild(strengthDot);
-    }
-
-    // Remove component visual
-    function removeComponentVisual(cell) {
-        cell.style.backgroundColor = '';
-        cell.style.color = '';
-        cell.style.fontWeight = '';
-        cell.textContent = '';
-        cell.classList.remove('has-component');
-        
-        // Remove jsPlumb marker and attributes
-        cell.classList.remove('component-node');
-        delete cell.dataset.component;
-        delete cell.dataset.gene;
-
-        const dot = cell.querySelector('.strength-dot');
-        if (dot) {
-            dot.remove();
+        // Find the component in our data to get its custom name
+        let component = null;
+        for (const [type, components] of Object.entries(state.cellboard)) {
+            component = components.find(comp => comp.x === x && comp.y === y);
+            if (component) break;
         }
+        
+        // Create component display
+        const display = document.createElement('div');
+        display.className = 'placed-component';
+        display.textContent = getComponentSymbol(componentType);
+        
+        // Use custom name if available, otherwise default
+        const displayName = (component && component.customName) || `${componentType} #${componentNumber}`;
+        display.title = displayName;
+        
+        // Add component-specific styling
+        display.classList.add(`component-${componentType.toLowerCase().replace(' ', '-')}`);
+        
+        // Add double-click event for renaming
+        display.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            showRenameDialog(x, y, componentType, componentNumber, displayName);
+        });
+        
+        cell.appendChild(display);
     }
 
-    // Get component abbreviation
-    function getComponentAbbreviation(type) {
-        const abbreviations = {
+    function getComponentSymbol(type) {
+        const symbols = {
             'Promoter': 'P',
-            'Terminator': 'T',
             'RBS': 'R',
             'CDS': 'C',
+            'Terminator': 'T',
             'Repressor Start': 'Rs',
             'Repressor End': 'Re',
             'Activator Start': 'As',
             'Activator End': 'Ae',
-            'Inducer': 'I'
+            'Inducer Start': 'Is',
+            'Inducer End': 'Ie',
+            'Inhibitor Start': 'Ins',
+            'Inhibitor End': 'Ine'
         };
-        return abbreviations[type] || type.charAt(0);
+        return symbols[type] || type.charAt(0);
     }
 
-    // Get strength color
-    function getStrengthColor(strength) {
-        const colors = {
-            'weak': '#fca5a5',
-            'norm': '#fcd34d',
-            'strong': '#86efac'
-        };
-        return colors[strength] || '#fcd34d';
-    }
-
-    // Run simulation
-    async function runSimulation() {
-        if (!simulateBtn) return;
-
-        // Disable button and show loading
-        simulateBtn.disabled = true;
-        simulateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Running...';
+    function clearComponentSelection() {
+        // Remove selected class from all components
+        document.querySelectorAll('.component.selected').forEach(comp => {
+            comp.classList.remove('selected');
+        });
         
-        // Clear previous errors
-        if (errorDisplay) {
-            errorDisplay.style.display = 'none';
-            errorDisplay.textContent = '';
-        }
+        // Hide placement mode
+        hidePlacementMode();
+    }
 
-        // Show loading in plot container
-        if (plotContainer) {
-            plotContainer.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Simulating genetic circuit dynamics...</p>
-                </div>
-            `;
+    function showPlacementMode() {
+        // Add placement mode class to board
+        const board = document.querySelector('.cell-board');
+        if (board) {
+            board.classList.add('placement-mode');
         }
+        
+        // Add hover effects to empty cells
+        cells.forEach(cell => {
+            if (!cell.classList.contains('filled')) {
+                cell.classList.add('placement-ready');
+            }
+        });
+    }
 
+    function hidePlacementMode() {
+        // Remove placement mode class from board
+        const board = document.querySelector('.cell-board');
+        if (board) {
+            board.classList.remove('placement-mode');
+        }
+        
+        // Remove hover effects from cells
+        cells.forEach(cell => {
+            cell.classList.remove('placement-ready');
+        });
+    }
+
+    function showSelectionHint() {
+        // Show a brief hint that user needs to select a component first
+        const hint = document.createElement('div');
+        hint.className = 'selection-hint';
+        hint.textContent = 'Select a component first!';
+        hint.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            font-weight: bold;
+            animation: fadeInOut 2s ease-in-out;
+        `;
+        
+        document.body.appendChild(hint);
+        
+        // Remove hint after animation
+        setTimeout(() => {
+            if (hint.parentNode) {
+                hint.parentNode.removeChild(hint);
+            }
+        }, 2000);
+    }
+
+    function updateSelectionStatus() {
+        const statusElement = document.getElementById('selection-status');
+        if (!statusElement) return;
+        
+        const icon = statusElement.querySelector('i');
+        const text = statusElement.querySelector('span');
+        
+        if (state.currentComponent) {
+            icon.className = 'fas fa-check-circle';
+            text.textContent = `Selected: ${state.currentComponent}`;
+            statusElement.className = 'selection-status selected';
+        } else {
+            icon.className = 'fas fa-mouse-pointer';
+            text.textContent = 'Click a component to select';
+            statusElement.className = 'selection-status';
+        }
+    }
+
+    function setupDragModeToggle() {
+        const toggle = document.getElementById('drag-mode-toggle');
+        if (!toggle) return;
+        
+        toggle.addEventListener('change', function() {
+            const isDragEnabled = this.checked;
+            
+            // Toggle draggable attribute on all components
+            components.forEach(comp => {
+                comp.draggable = isDragEnabled;
+                if (isDragEnabled) {
+                    comp.style.cursor = 'grab';
+                } else {
+                    comp.style.cursor = 'pointer';
+                }
+            });
+            
+            console.log(`Drag mode ${isDragEnabled ? 'enabled' : 'disabled'}`);
+        });
+    }
+
+    function showRenameDialog(x, y, componentType, componentNumber, currentName) {
+        // Find the component in our data
+        let component = null;
+        for (const [type, components] of Object.entries(state.cellboard)) {
+            component = components.find(comp => comp.x === x && comp.y === y);
+            if (component) break;
+        }
+        
+        if (!component) return;
+        
+        // Create a simple prompt dialog
+        const newName = prompt(`Enter new name for ${componentType} #${componentNumber}:`, 
+                              component.customName || `${componentType} ${componentNumber}`);
+        
+        if (newName && newName.trim() !== '') {
+            renameComponent(x, y, newName.trim());
+        }
+    }
+
+    function renameComponent(x, y, newName) {
+        // Find the component in our data
+        let component = null;
+        let componentType = null;
+        for (const [type, components] of Object.entries(state.cellboard)) {
+            component = components.find(comp => comp.x === x && comp.y === y);
+            if (component) {
+                componentType = type;
+                break;
+            }
+        }
+        
+        if (!component) return;
+        
+        // Update the component's custom name
+        component.customName = newName;
+        
+        // Update the visual display
+        updateCellDisplay(x, y, componentType, component.number);
+        
+        // Update the parameter section title
+        updateParameterSectionTitle(componentType, component.number, newName);
+        
+        console.log(`Renamed component at (${x}, ${y}) to "${newName}"`);
+    }
+
+    function updateParameterSectionTitle(componentType, componentNumber, customName) {
+        const baseType = componentType.toLowerCase().replace(' ', '_');
+        const sectionId = `section_${baseType}_${componentNumber}`;
+        const section = document.getElementById(sectionId);
+        
+        if (section) {
+            const summary = section.querySelector('.dial-accordion-header');
+            if (summary) {
+                summary.textContent = `${customName} Parameters`;
+            }
+        }
+    }
+
+    // Drag and drop functionality
+    function setupDragAndDrop() {
+        // Setup dragging from component palette
+        components.forEach(component => {
+            component.addEventListener('dragstart', function(e) {
+                state.isDragging = true;
+                state.draggedElement = this;
+                const componentType = this.dataset.component;
+                
+                e.dataTransfer.setData('text/plain', componentType);
+                e.dataTransfer.effectAllowed = 'copy';
+                
+                // Visual feedback
+                this.style.opacity = '0.5';
+            });
+            
+            component.addEventListener('dragend', function(e) {
+                state.isDragging = false;
+                state.draggedElement = null;
+                this.style.opacity = '1';
+            });
+        });
+        
+        // Setup drop targets (cells)
+        cells.forEach(cell => {
+            cell.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                
+                // Visual feedback
+                this.classList.add('drop-target');
+            });
+            
+            cell.addEventListener('dragleave', function(e) {
+                this.classList.remove('drop-target');
+            });
+            
+            cell.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drop-target');
+                
+                const componentType = e.dataTransfer.getData('text/plain');
+                const x = parseInt(this.dataset.x);
+                const y = parseInt(this.dataset.y);
+                
+                // Check if cell is already occupied
+                if (this.classList.contains('filled')) {
+                    removeComponent(x, y);
+                }
+                
+                // Place the component
+                placeComponent(x, y, componentType, state.currentStrength);
+            });
+        });
+    }
+
+    // Button setup
+    function setupButtons() {
+        if (simulateBtn) {
+            simulateBtn.addEventListener('click', runSimulation);
+        }
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', clearBoard);
+        }
+    }
+
+    // Simulation functions
+    async function runSimulation() {
         try {
-            // Check if components are placed
-            if (state.placedComponents.length === 0) {
-                throw new Error('No components placed on the board. Please place some components first.');
-            }
-
-            // Prepare cellboard data
-            const cellboard = state.placedComponents.reduce((acc, comp) => {
-                if (!acc[comp.type]) {
-                    acc[comp.type] = [];
-                }
-                acc[comp.type].push({
-                    gene: comp.gene,
-                    strength: comp.strength,
-                    x: comp.x,
-                    y: comp.y
-                });
-                return acc;
-            }, {});
-
-            // Prepare request data
-            const requestData = { cellboard: cellboard };
-
-            // Add dial data if in dial mode AND the user enabled parameter overrides
-            if (dialForm) {
-                const toggle = document.getElementById('enable_dial_params');
-                const includeDial = toggle ? toggle.checked : true;
-                // Tell server explicitly whether to apply dial overrides
-                requestData.apply_dial = !!includeDial;
-                if (includeDial) {
-                    const dialData = {};
-                    // only gather enabled inputs (disabled inputs are ignored)
-                    const inputs = dialForm.querySelectorAll('input[type="number"]:not([disabled])');
-                    inputs.forEach(input => {
-                        dialData[input.name] = parseFloat(input.value) || 0;
-                    });
-                    requestData.dial = dialData;
-                }
-                // if includeDial is false, we explicitly set apply_dial=false and omit dial
-            }
-
-            // Debug: show whether dial overrides will be applied and the full payload
-            console.log('Sending simulation request. apply_dial:', requestData.apply_dial, 'payload:', requestData);
-
-            // Send simulation request
+            // Show loading state
+            const originalText = simulateBtn.textContent;
+            simulateBtn.textContent = 'Simulating...';
+            simulateBtn.disabled = true;
+            
+            // Collect dial parameters
+            const dialData = collectDialParameters();
+            
+            // Prepare simulation data
+            const simulationData = {
+                cellboard: state.cellboard,
+                dial: dialData,
+                apply_dial: true
+            };
+            
+            console.log('Sending simulation data:', simulationData);
+            
+            // Send to backend
             const response = await fetch('/simulate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify(simulationData)
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Server error: ${response.status}`);
-            }
-
-            const result = await response.json();
-            console.log('Simulation result:', result);
-
-            if (result.status === 'success') {
-                // Display results
-                if (result.plot && plotContainer) {
-                    plotContainer.innerHTML = `
-                        <img src="data:image/png;base64,${result.plot}" 
-                             alt="Simulation Results" 
-                             class="plot-image">
-                    `;
-                } else if (plotContainer) {
-                    plotContainer.innerHTML = '<p class="text-center">Simulation completed successfully</p>';
-                }
-
-                // Add animation
-                if (plotContainer) {
-                    plotContainer.classList.add('placed');
-                    setTimeout(() => {
-                        plotContainer.classList.remove('placed');
-                    }, 300);
-                }
-
-                // Populate ontology analysis
-                populateOntologyAnalysis(result);
-                
-                // Log detailed results
-                if (result.circuits) {
-                    console.log('Detected circuits:', result.circuits);
-                }
-                if (result.regulations) {
-                    console.log('Regulatory networks:', result.regulations);
-                }
-                if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Simulation warnings:', result.warnings);
-                }
-
-            } else {
-                throw new Error(result.message || 'Unknown simulation error');
-            }
-
-        } catch (error) {
-            console.error('Simulation failed:', error);
             
-            // Display error
-            if (errorDisplay) {
-                errorDisplay.textContent = `Error: ${error.message}`;
-                errorDisplay.style.display = 'block';
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                displaySimulationResults(result);
+            } else {
+                throw new Error(result.message || 'Simulation failed');
             }
-
-            // Show error in plot container
-            if (plotContainer) {
-                plotContainer.innerHTML = `
-                    <div class="loading">
-                        <i class="fas fa-exclamation-triangle" style="color: var(--error); font-size: 2rem;"></i>
-                        <p>Simulation failed</p>
-                        <small class="text-muted">${error.message}</small>
-                    </div>
-                `;
-            }
-
+            
+        } catch (error) {
+            console.error('Simulation error:', error);
+            displayError('Simulation failed: ' + error.message);
         } finally {
-            // Re-enable button
+            // Restore button state
+            simulateBtn.textContent = 'Run Enhanced Simulation';
             simulateBtn.disabled = false;
-            simulateBtn.innerHTML = '<i class="fas fa-play me-2"></i>Run Simulation';
         }
     }
 
-    // Clear board
-    function clearBoard() {
-        if (state.placedComponents.length === 0) return;
+    function collectDialParameters() {
+        const dialData = {};
+        
+        // Collect all dial inputs (including dynamic ones)
+        document.querySelectorAll('#dial-form input[type="number"]').forEach(input => {
+            const key = input.name || input.id;
+            const value = parseFloat(input.value);
+            if (!isNaN(value)) {
+                dialData[key] = value;
+            }
+        });
+        
+        console.log('Collected dial parameters:', dialData);
+        return dialData;
+    }
 
-        if (confirm('Are you sure you want to clear the design board?')) {
-            // Clear state
-            state.placedComponents = [];
-
-            // Clear visuals
-            cells.forEach(cell => {
-                removeComponentVisual(cell);
-            });
-
-            // Reset plot container
-            if (plotContainer) {
-                plotContainer.innerHTML = `
-                    <div class="loading">
-                        <i class="fas fa-dna" style="color: var(--primary); font-size: 2rem;"></i>
-                        <p>Design your circuit and run simulation</p>
-                    </div>
+    function displaySimulationResults(result) {
+        if (!plotContainer) return;
+        
+        // Clear previous results
+        plotContainer.innerHTML = '';
+        
+        // Create results container
+        const resultsDiv = document.createElement('div');
+        resultsDiv.className = 'simulation-results';
+        
+        // Add plot if available
+        if (result.plot_data) {
+            const plotImg = document.createElement('img');
+            plotImg.src = `data:image/png;base64,${result.plot_data}`;
+            plotImg.className = 'simulation-plot';
+            plotImg.alt = 'Simulation Results';
+            resultsDiv.appendChild(plotImg);
+        }
+        
+        // Add equations if available
+        if (result.equations) {
+            const equationsDiv = document.createElement('div');
+            equationsDiv.className = 'equations-container';
+            equationsDiv.innerHTML = '<h3>Circuit Equations</h3>';
+            
+            Object.entries(result.equations).forEach(([protein, eq]) => {
+                const eqDiv = document.createElement('div');
+                eqDiv.className = 'equation-item';
+                eqDiv.innerHTML = `
+                    <h4>${protein}</h4>
+                    <div class="equation-latex">${eq.latex}</div>
+                    <p class="equation-description">${eq.description}</p>
                 `;
-            }
-
-            // Clear errors
-            if (errorDisplay) {
-                errorDisplay.style.display = 'none';
-            }
-
-            console.log('Board cleared');
-        }
-    }
-
-    // Show help
-    function showHelp() {
-        const helpText = `
-How to use the Genetic Circuit Designer:
-
-1. Select a gene tab (1, 2, or 3)
-2. Click a component to select it
-3. Click the component again to choose strength (weak/normal/strong)
-4. Drag or click to place components on the board
-5. Right-click on placed components to remove them
-6. Use the Run Simulation button to analyze your circuit
-7. Check the results for circuit dynamics and warnings
-
-Components:
-• Promoter: Initiates transcription
-• RBS: Ribosome binding site for translation
-• CDS: Coding sequence (protein output)
-• Terminator: Stops transcription
-• Repressor Start/End: Inhibits expression
-• Activator Start/End: Enhances expression
-
-Tips:
-• Place components in logical order (Promoter → RBS → CDS → Terminator)
-• Use regulatory elements to create complex networks
-• Experiment with different strengths for varied dynamics
-        `;
-        
-        alert(helpText);
-    }
-
-    // Ontology Analysis Population
-    function populateOntologyAnalysis(result) {
-        const analysisSection = document.getElementById('ontology-analysis');
-        
-        if (!analysisSection) return;
-        
-        // Show the analysis section
-        analysisSection.style.display = 'block';
-        
-        const circuits = result.circuits || [];
-        const regulations = result.regulations || [];
-        const warnings = result.warnings || [];
-        const errors = result.errors || [];
-        
-        // Calculate metrics
-        const validCircuits = circuits.filter(c => c.components && c.components.length > 0 && (!c.fallback_by_cds || Object.keys(c.fallback_by_cds).length === 0));
-        const incompleteCircuits = circuits.filter(c => c.fallback_by_cds && Object.keys(c.fallback_by_cds).length > 0);
-        const extraComponents = circuits.reduce((acc, c) => acc + (c.extras ? c.extras.length : 0), 0);
-        const regulatoryLinks = regulations.length;
-        const unpairedRegs = result.unpaired_regulators || [];
-        
-        // Update status overview
-        updateStatusOverview(validCircuits.length, incompleteCircuits.length, extraComponents, regulatoryLinks);
-        
-        // Populate detailed sections
-        populateValidCircuits(validCircuits);
-        populateIncompleteCircuits(circuits);
-        populateUnpairedRegulators(unpairedRegs);
-        populateRegulatoryNetworks(regulations);
-        populateEquationDisplay(result);
-        populateCircuitIssues(warnings, errors);
-        populateExtraComponents(circuits);
-        populateComponentAnalysis(circuits);
-        
-        // Add animation
-        analysisSection.classList.add('placed');
-        setTimeout(() => {
-            analysisSection.classList.remove('placed');
-        }, 300);
-    }
-    
-    function updateStatusOverview(valid, incomplete, extra, regulatory) {
-        document.getElementById('valid-circuits').textContent = valid;
-        document.getElementById('incomplete-circuits').textContent = incomplete;
-        document.getElementById('extra-components').textContent = extra;
-        document.getElementById('regulatory-links').textContent = regulatory;
-    }
-    
-    function populateIncompleteCircuits(circuits) {
-        const container = document.getElementById('incomplete-circuits-list');
-        
-        // Filter for circuits with fallbacks
-        const incompleteCircuits = circuits.filter(circuit => circuit.fallback_by_cds && Object.keys(circuit.fallback_by_cds).length > 0);
-        
-        if (incompleteCircuits.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle text-muted"></i>
-                    <p>No incomplete circuits found</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = incompleteCircuits.map(circuit => `
-            <div class="circuit-item incomplete">
-                <h5>${circuit.name || 'Circuit'} <span class="badge bg-warning">Incomplete</span></h5>
-                <div class="circuit-meta">
-                    <span>Components: ${circuit.components.length}</span>
-                    <span>CDS: ${circuit.component_counts?.cds || 0}</span>
-                    <span>Missing Parts: ${Object.keys(circuit.fallback_by_cds).length}</span>
-                </div>
-                <div class="fallback-details">
-                    <h6>Missing Components by CDS:</h6>
-                    ${Object.entries(circuit.fallback_by_cds).map(([cds, fallbacks]) => `
-                        <div class="fallback-item">
-                            <strong>${cds}:</strong>
-                            ${Object.entries(fallbacks).filter(([key, val]) => key.startsWith('missing_') && val).map(([key, val]) => {
-                                const part = key.replace('missing_', '');
-                                return `<span class="missing-part">${part}</span>`;
-                            }).join(', ')}
-                            ${(() => {
-                                const showAdjusted = document.getElementById('enable_dial_params')?.checked;
-                                if (!showAdjusted) return '';
-                                return `${fallbacks.prom_strength !== undefined ? 
-                                    `<small class="text-muted">(promoter strength adjusted to ${fallbacks.prom_strength})</small>` : ''}
-                                ${fallbacks.rbs_efficiency !== undefined ? 
-                                    `<small class="text-muted">(RBS efficiency adjusted to ${fallbacks.rbs_efficiency})</small>` : ''}
-                                ${fallbacks.degradation_rate !== undefined ? 
-                                    `<small class="text-muted">(degradation adjusted to ${fallbacks.degradation_rate})</small>` : ''}`;
-                            })()}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function populateUnpairedRegulators(unpaired) {
-        const container = document.getElementById('unpaired-regulators-list');
-        
-        if (!unpaired || unpaired.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-link text-muted"></i>
-                    <p>All regulators are properly paired</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = unpaired.map(reg => `
-            <div class="regulator-item unpaired">
-                <h5>${reg.label} <span class="badge bg-danger">Unpaired</span></h5>
-                <div class="regulator-issue">
-                    <strong>Issue:</strong> ${reg.issue}
-                </div>
-                <div class="regulator-hint">
-                    <strong>Solution:</strong> ${reg.hint}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function populateValidCircuits(circuits) {
-        const container = document.getElementById('valid-circuits-list');
-        
-        // Filter for complete circuits (no fallbacks)
-        const completeCircuits = circuits.filter(circuit => !circuit.fallback_by_cds || Object.keys(circuit.fallback_by_cds).length === 0);
-        
-        if (completeCircuits.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-dna text-muted"></i>
-                    <p>No complete circuits detected yet</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = completeCircuits.map(circuit => `
-            <div class="circuit-item">
-                <h5>${circuit.name || 'Circuit'}</h5>
-                <div class="circuit-meta">
-                    <span>Components: ${circuit.components.length}</span>
-                    <span>CDS: ${circuit.component_counts?.cds || 0}</span>
-                    <span>Promoters: ${circuit.component_counts?.promoter || 0}</span>
-                </div>
-                <div class="circuit-description">
-                    ${generateCircuitDescription(circuit)}
-                </div>
-                <div class="component-badges">
-                    ${circuit.components.map(comp => 
-                        `<span class="component-badge ${comp.type}">${comp.type}</span>`
-                    ).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function populateRegulatoryNetworks(regulations) {
-        const container = document.getElementById('regulations-list');
-        
-        if (regulations.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-project-diagram text-muted"></i>
-                    <p>No regulatory networks found</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = regulations.map(reg => `
-            <div class="regulation-item">
-                <h5>${reg.type.toUpperCase()} Regulation</h5>
-                <div class="regulation-meta">
-                    <span>Source: ${reg.source || 'Constitutive'}</span>
-                    <span>Target: ${reg.target}</span>
-                </div>
-                <div class="regulation-description">
-                    ${generateRegulationDescription(reg)}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function populateCircuitIssues(warnings, errors) {
-        const container = document.getElementById('circuit-issues');
-        const issues = [...warnings.map(w => ({type: 'warning', message: w})), 
-                       ...errors.map(e => ({type: 'error', message: e}))];
-        
-        if (issues.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-shield-alt text-muted"></i>
-                    <p>No issues detected</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = issues.map(issue => `
-            <div class="issue-item">
-                <h5>
-                    <span class="issue-severity ${issue.type}">${issue.type.toUpperCase()}</span>
-                    Circuit Issue
-                </h5>
-                <div class="issue-description">
-                    ${issue.message}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function populateExtraComponents(circuits) {
-        const container = document.getElementById('extra-components-list');
-        const allExtras = circuits.reduce((acc, c) => [...acc, ...(c.extras || [])], []);
-        
-        if (allExtras.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-puzzle-piece text-muted"></i>
-                    <p>All components are properly assigned</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = allExtras.map(extra => `
-            <div class="extra-item">
-                <h5>Extra ${extra.type.toUpperCase()}</h5>
-                <div class="extra-meta">
-                    <span>Name: ${extra.name}</span>
-                    <span>ID: ${extra.id}</span>
-                </div>
-                <div class="extra-description">
-                    <strong>Reason:</strong> ${extra.reason || 'Component exceeds expected count'}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function populateComponentAnalysis(circuits) {
-        const container = document.getElementById('component-analysis');
-        
-        if (circuits.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-cube text-muted"></i>
-                    <p>Place components to see detailed analysis</p>
-                </div>
-            `;
-            return;
-        }
-        
-        const componentStats = calculateComponentStats(circuits);
-        
-        container.innerHTML = `
-            <div class="row">
-                ${Object.entries(componentStats).map(([type, stats]) => `
-                    <div class="col-md-6 mb-3">
-                        <div class="component-item">
-                            <h5>${capitalizeComponentType(type)} Components</h5>
-                            <div class="component-meta">
-                                <span>Count: ${stats.count}</span>
-                                <span>Average Strength: ${stats.avgStrength}</span>
-                            </div>
-                            <div class="component-description">
-                                ${generateComponentStatsDescription(type, stats)}
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-    
-    function generateCircuitDescription(circuit) {
-        const compCounts = circuit.component_counts || {};
-        const hasRegulators = (compCounts.repressor || 0) + (compCounts.activator || 0) > 0;
-        
-        if (compCounts.cds > 0 && compCounts.promoter > 0) {
-            return `Complete functional circuit with ${compCounts.cds} CDS protein(s) under ${compCounts.promoter} Promoter(s)${hasRegulators ? ' with regulatory control' : ''}.`;
-        } else {
-            return 'Incomplete circuit missing essential components for protein expression.';
-        }
-    }
-    
-    function generateRegulationDescription(reg) {
-        if (reg.type === 'constitutive') {
-            return `Constitutive expression with basal rate of ${reg.parameters?.basal_rate || 'default'}.`;
-        } else {
-            return `${reg.type.charAt(0).toUpperCase() + reg.type.slice(1)} regulation affecting ${reg.affected_cdss?.length || 0} protein(s).`;
-        }
-    }
-    
-    function capitalizeComponentType(type) {
-        const capitalizations = {
-            'promoter': 'Promoter',
-            'rbs': 'RBS', 
-            'cds': 'CDS',
-            'terminator': 'Terminator',
-            'regulator': 'Regulator',
-            'activator': 'Activator',
-            'repressor': 'Repressor',
-            'operator': 'Operator'
-        };
-        return capitalizations[type.toLowerCase()] || type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-    }
-    
-    function generateComponentStatsDescription(type, stats) {
-        const descriptions = {
-            'promoter': `Initiating gene expression with average strength ${stats.avgStrength}`,
-            'rbs': `Translation efficiency averaging ${stats.avgStrength} strength`,
-            'cds': `Protein coding sequences with ${stats.avgStrength} expression level`,
-            'terminator': `Transcription termination with ${stats.avgStrength} efficiency`,
-            'regulator': `Regulatory elements for circuit control`
-        };
-        return descriptions[type.toLowerCase()] || `${capitalizeComponentType(type)} components in the circuit`;
-    }
-    
-    function calculateComponentStats(circuits) {
-        const stats = {};
-        
-        circuits.forEach(circuit => {
-            circuit.components.forEach(comp => {
-                if (!stats[comp.type]) {
-                    stats[comp.type] = { count: 0, totalStrength: 0, strengths: [] };
-                }
-                
-                stats[comp.type].count++;
-                
-                // Try to extract strength from component parameters
-                const strength = comp.parameters?.strength || 1;
-                stats[comp.type].totalStrength += strength;
-                stats[comp.type].strengths.push(strength);
+                equationsDiv.appendChild(eqDiv);
             });
-        });
+            
+            resultsDiv.appendChild(equationsDiv);
+        }
         
-        // Calculate averages
-        Object.keys(stats).forEach(type => {
-            const typeStats = stats[type];
-            typeStats.avgStrength = (typeStats.totalStrength / typeStats.count).toFixed(2);
-        });
+        plotContainer.appendChild(resultsDiv);
         
-        return stats;
+        // Render LaTeX equations if MathJax is available
+        if (window.MathJax) {
+            MathJax.typesetPromise([plotContainer]).catch(err => {
+                console.error('MathJax error:', err);
+            });
+        }
     }
 
-    function populateEquationDisplay(result) {
-        const container = document.getElementById('equation-display-list');
-        if (!container) return;
-        
-        const equations = result.equations || {};
-        const proteinMapping = result.protein_mapping || {};
-        
-        if (Object.keys(equations).length === 0) {
-            container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No protein equations generated</div>';
-            return;
+    function displayError(message) {
+        if (errorDisplay) {
+            errorDisplay.textContent = message;
+            errorDisplay.style.display = 'block';
+            setTimeout(() => {
+                errorDisplay.style.display = 'none';
+            }, 5000);
+        } else {
+            alert(message);
+        }
+    }
+
+    function clearBoard() {
+        // Clear all placed components
+        for (const type in state.cellboard) {
+            state.cellboard[type] = [];
         }
         
-        let html = '';
+        // Reset component counts
+        state.componentCounts = {};
         
-        // Add MathJax configuration if not already loaded
-        if (typeof MathJax === 'undefined') {
-            html += `
-                <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-                <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-                <script>
-                window.MathJax = {
-                    tex: {
-                        inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-                        displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']]
-                    }
-                };
-                </script>
-            `;
-        }
+        // Remove all dynamic parameter sections
+        clearAllDynamicParameterSections();
         
-        Object.entries(equations).forEach(([protein, eq]) => {
-            html += `
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0">
-                            <i class="fas fa-dna me-2"></i>
-                            ${protein} Expression
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="equation-latex mb-3">
-                            $$${eq.latex}$$
-                        </div>
-                        <div class="equation-description">
-                            <p class="text-muted mb-2">
-                                <strong>Description:</strong> ${eq.description}
-                            </p>
-                            <div class="equation-components">
-                                <strong>Components:</strong>
-                                <ul class="mb-0">
-                                    ${eq.components.map(comp => `<li class="small">${comp}</li>`).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+        // Clear visual representation
+        cells.forEach(cell => {
+            cell.innerHTML = '';
+            cell.classList.remove('filled');
+        });
+        
+        // Clear results
+        if (plotContainer) {
+            plotContainer.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-dna" style="color: var(--primary); font-size: 2rem;"></i>
+                    <p>Design your circuit and run enhanced simulation</p>
                 </div>
             `;
+        }
+        
+        console.log('Board cleared');
+    }
+    
+    // Clear all dynamic parameter sections
+    function clearAllDynamicParameterSections() {
+        const dialAccordion = document.querySelector('.dial-accordion');
+        if (!dialAccordion) return;
+        
+        // Remove all sections that have an ID starting with 'section_'
+        const dynamicSections = dialAccordion.querySelectorAll('[id^="section_"]');
+        dynamicSections.forEach(section => {
+            section.remove();
         });
         
-        container.innerHTML = html;
-        
-        // Render MathJax if available
-        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-            MathJax.typesetPromise([container]).catch((err) => console.log('MathJax error:', err));
+        console.log('Cleared all dynamic parameter sections');
+    }
+
+    function getStrengthColor(strength) {
+        const colors = {
+            'weak': '#fca5a5',
+            'norm': '#fcd34d', 
+            'strong': '#86efac'
+        };
+        return colors[strength] || colors['norm'];
+    }
+
+    // Hide all strength menus when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.component')) {
+            document.querySelectorAll('.strength-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
         }
-    }
+    });
 
-    // Export project functionality
-    function exportProject() {
-        // Show loading state
-        const exportBtn = document.getElementById('export-btn');
-        const originalText = exportBtn.innerHTML;
-        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
-        exportBtn.disabled = true;
-
-        // Create a temporary link to trigger download
-        const link = document.createElement('a');
-        link.href = '/export';
-        link.download = ''; // Let the server determine the filename
-        
-        // Append to body, click, and remove
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // Reset button after a short delay
-        setTimeout(() => {
-            exportBtn.innerHTML = originalText;
-            exportBtn.disabled = false;
-        }, 2000);
-    }
-
-    // Expose state for debugging
-    window.circuitDesigner = {
-        state: state,
-        placeComponent: placeComponent,
-        removeComponent: removeComponent,
-        clearBoard: clearBoard,
-        runSimulation: runSimulation,
-        populateOntologyAnalysis: populateOntologyAnalysis,
-        exportProject: exportProject
+    // Export functions for external use
+    window.CircuitDesigner = {
+        state,
+        placeComponent,
+        removeComponent,
+        runSimulation,
+        clearBoard
     };
 });

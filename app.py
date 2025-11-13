@@ -175,20 +175,19 @@ def simulate():
         # Convert cellboard format to hardware txt file format
         placed_components = []
         
+        # Track component counts for auto-numbering (promoter_1, promoter_2, etc.)
+        component_counts = {}
+        
         # Collect all placed components with their positions
         for component_type, components in cellboard.items():
             for comp in components:
                 x = int(comp.get('x', 0))
                 y = int(comp.get('y', 0))
-                gene = comp.get('gene', 'Gene 1')
                 strength = comp.get('strength', 'norm')
                 
                 # Convert position to MUX/Channel format
                 channel = y * 8 + x
                 mux_letter = 'A'  # Start with MUX A for simplicity
-                
-                # Create component identifier using hardware naming convention
-                gene_letter = gene.split()[-1].lower() if 'Gene' in gene else 'a'
                 
                 # Map component types to hardware naming convention
                 type_map = {
@@ -207,7 +206,14 @@ def simulate():
                 }
                 
                 base_type = type_map.get(component_type, component_type.lower().replace(' ', '_'))
-                comp_name = f"{base_type}_{gene_letter}"
+                
+                # Auto-increment component number based on type
+                if base_type not in component_counts:
+                    component_counts[base_type] = 1
+                else:
+                    component_counts[base_type] += 1
+                
+                comp_name = f"{base_type}_{component_counts[base_type]}"
                 
                 placed_components.append({
                     'channel': channel,
@@ -215,8 +221,8 @@ def simulate():
                     'name': comp_name,
                     'type': component_type,
                     'strength': strength,
-                    'gene': gene,
-                    'position': channel  # For sorting
+                    'position': channel,  # For sorting
+                    'comp_number': component_counts[base_type]  # Store the number for dial interface
                 })
         
         # Sort by position to create ordered circuit
