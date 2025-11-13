@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dial Mode - Genetic Circuit Designer</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/dial.css') }}" rel="stylesheet">
+    <!-- MathJax for equation rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dial') }}">
+                MAGiC
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="{{ url_for('dial') }}">Virtual Mode</a>
+                <a class="nav-link" href="{{ url_for('eeprom') }}">Board Mode</a>
+                <a class="nav-link" href="{{ url_for('about') }}">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header text-center mb-4">
+            <h1>Virtual Mode</h1>
+            <p class="lead">Fine-tune circuit parameters for advanced simulation</p>
+        </header>
+
+        <!-- Dial Mode Layout -->
+        <div class="dial-mode-container">
+            <!-- Sidebar: Parameter Controls -->
+            <div class="dial-sidebar">
+                <h2>Circuit Parameters</h2>
+
+                <div class="dial-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="enable_dial_params" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="enable_dial_params" class="toggle-label">Apply circuit parameter overrides</label>
+                </div>
+
+          <form id="dial-form">
+              <div class="dial-accordion">
+               <details class="dial-accordion-item" open>
+                <summary class="dial-accordion-header">Global Parameters</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="global_transcription_rate">Transcription Rate:</label>
+                     <input type="number" id="global_transcription_rate" name="global_transcription_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="global_translation_rate">Translation Rate:</label>
+                     <input type="number" id="global_translation_rate" name="global_translation_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="global_degradation_rate">Degradation Rate:</label>
+                     <input type="number" id="global_degradation_rate" name="global_degradation_rate" 
+                         min="0.1" max="3.0" step="0.1" value="1.0">
+
+                     <label for="temperature_factor">Temperature:</label>
+                     <input type="number" id="temperature_factor" name="temperature_factor" 
+                         min="0.5" max="2.0" step="0.1" value="1.0">
+
+                     <label for="resource_availability">Resources:</label>
+                     <input type="number" id="resource_availability" name="resource_availability" 
+                         min="0.1" max="2.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+               </details>
+               <details class="dial-accordion-item">
+                <summary class="dial-accordion-header">Regulatory Elements</summary>
+                <div class="dial-accordion-body">
+                    <div class="dial-grid">
+                     <label for="repressor_strength">Repressor Strength:</label>
+                     <input type="number" id="repressor_strength" name="repressor_strength" 
+                         min="0.1" max="5.0" step="0.1" value="2.0">
+
+                     <label for="activator_strength">Activator Strength:</label>
+                     <input type="number" id="activator_strength" name="activator_strength" 
+                         min="0.1" max="5.0" step="0.1" value="3.0">
+
+                     <label for="binding_affinity">Binding Affinity:</label>
+                     <input type="number" id="binding_affinity" name="binding_affinity" 
+                         min="0.01" max="1.0" step="0.01" value="0.1">
+
+                     <label for="cooperativity">Cooperativity:</label>
+                     <input type="number" id="cooperativity" name="cooperativity" 
+                         min="0.5" max="3.0" step="0.1" value="2.0">
+                    </div>
+                </div>
+               </details>
+               <!-- Dynamic component parameters will be inserted here by JavaScript -->
+              </div>
+          </form>
+            </div>
+
+            <!-- Main Area -->
+            <div class="dial-main">
+                <!-- Component Palette -->
+                <div class="component-palette">
+                    <h2>Genetic Components</h2>
+
+                <!-- Unified Components -->
+                <div class="components-grid" id="components-grid">
+                    <div class="component" data-component="Promoter" draggable="true" data-tooltip="Place at the start of the operon to begin transcription.">
+                        <div class="component-name">Promoter</div>
+                        <!-- Strength menu commented out - using dynamic parameters instead -->
+                        <!--
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #ec2a7b;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                        -->
+                    </div>
+                    
+                    <div class="component" data-component="RBS" draggable="true" data-tooltip="Position just before each CDS to start translation, often follows a promoter.">
+                        <div class="component-name">RBS</div>
+                        <!-- Strength menu commented out - using dynamic parameters instead -->
+                        <!--
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                        -->
+                    </div>
+                    
+                    <div class="component" data-component="CDS" draggable="true" data-tooltip="Add after an RBS; codes for a protein.">
+                        <div class="component-name">CDS</div>
+                        <!-- Strength menu commented out - using dynamic parameters instead -->
+                        <!--
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                        -->
+                    </div>
+                    
+                    <div class="component" data-component="Terminator" draggable="true" data-tooltip="Place at the end of the operon to stop transcription.">
+                        <div class="component-name">Terminator</div>
+                        <!-- Strength menu commented out - using dynamic parameters instead -->
+                        <!--
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                        -->
+                    </div>
+                    
+                    <div class="component" data-component="Repressor Start" draggable="true" data-tooltip="Add after the CDS that makes the repressor protein.">
+                        <div class="component-name">Repressor Start</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Repressor End" draggable="true" data-tooltip="Place after the promoter of the CDS to be repressed.">
+                        <div class="component-name">Repressor End</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Activator Start" draggable="true" data-tooltip="Add after the CDS that makes the activator protein.">
+                        <div class="component-name">Activator Start</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Activator End" draggable="true" data-tooltip="Add after the CDS that makes the activator protein.">
+                        <div class="component-name">Activator End</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Inducer Start" draggable="true" data-tooltip="Add to start inducer regulation.">
+                        <div class="component-name">Inducer Start</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Inducer End" draggable="true" data-tooltip="Add to end inducer regulation.">
+                        <div class="component-name">Inducer End</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Inhibitor Start" draggable="true" data-tooltip="Add to start inhibitor regulation.">
+                        <div class="component-name">Inhibitor Start</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="component" data-component="Inhibitor End" draggable="true" data-tooltip="Add to end inhibitor regulation.">
+                        <div class="component-name">Inhibitor End</div>
+                        <div class="strength-menu">
+                            <div class="strength-option" data-strength="weak">
+                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
+                                Weak
+                            </div>
+                            <div class="strength-option" data-strength="norm">
+                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
+                                Normal
+                            </div>
+                            <div class="strength-option" data-strength="strong">
+                                <div class="strength-indicator" style="background-color: #86efac;"></div>
+                                Strong
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+                <!-- Design Board -->
+                <div class="cell-board">
+                    <h2>Design Board</h2>
+                    <div class="grid-container">
+                        <img src="static/css/attached_assests/weas.png" alt="Lab_Logo-C11" class="lab-logo">
+                        <div class="cell-board-header">
+                        <h1 class="cell-board-title">
+                        <span class="letter-c">C</span>
+                        <span class="letter-e1">e</span>
+                        <span class="letter-l2">l</span>
+                        <span class="letter-l3">l</span>
+                        <span class="letter-space"> </span>
+                        <span class="letter-b">B</span>
+                        <span class="letter-o">o</span>
+                        <span class="letter-a">a</span>
+                        <span class="letter-r">r</span>
+                        <span class="letter-d">d</span>
+                        </h1>
+                        <p class="lab-subtitle">By the Lopatkin Lab</p>
+                </div>
+                       <!-- Generate 8x8 grid -->
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="0"></div>
+                            <div class="cell functional" data-x="1" data-y="0"></div>
+                            <div class="cell functional" data-x="2" data-y="0"></div>
+                            <div class="cell functional" data-x="3" data-y="0"></div>
+                            <div class="cell functional" data-x="4" data-y="0"></div>
+                            <div class="cell functional" data-x="5" data-y="0"></div>
+                            <div class="cell functional" data-x="6" data-y="0"></div>
+                            <div class="cell functional" data-x="7" data-y="0"></div>
+                            <div class="cell functional" data-x="8" data-y="0"></div>
+                            <div class="cell functional" data-x="9" data-y="0"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="1"></div>
+                            <div class="cell functional" data-x="1" data-y="1"></div>
+                            <div class="cell functional" data-x="2" data-y="1"></div>
+                            <div class="cell functional" data-x="3" data-y="1"></div>
+                            <div class="cell functional" data-x="4" data-y="1"></div>
+                            <div class="cell functional" data-x="5" data-y="1"></div>
+                            <div class="cell functional" data-x="6" data-y="1"></div>
+                            <div class="cell functional" data-x="7" data-y="1"></div>
+                            <div class="cell functional" data-x="8" data-y="1"></div>
+                            <div class="cell functional" data-x="9" data-y="1"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="2"></div>
+                            <div class="cell functional" data-x="1" data-y="2"></div>
+                            <div class="cell functional" data-x="2" data-y="2"></div>
+                            <div class="cell functional" data-x="3" data-y="2"></div>
+                            <div class="cell functional" data-x="4" data-y="2"></div>
+                            <div class="cell functional" data-x="5" data-y="2"></div>
+                            <div class="cell functional" data-x="6" data-y="2"></div>
+                            <div class="cell functional" data-x="7" data-y="2"></div>
+                            <div class="cell functional" data-x="8" data-y="2"></div>
+                            <div class="cell functional" data-x="9" data-y="2"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="3"></div>
+                            <div class="cell functional" data-x="1" data-y="3"></div>
+                            <div class="cell functional" data-x="2" data-y="3"></div>
+                            <div class="cell functional" data-x="3" data-y="3"></div>
+                            <div class="cell functional" data-x="4" data-y="3"></div>
+                            <div class="cell functional" data-x="5" data-y="3"></div>
+                            <div class="cell functional" data-x="6" data-y="3"></div>
+                            <div class="cell functional" data-x="7" data-y="3"></div>
+                            <div class="cell functional" data-x="8" data-y="3"></div>
+                            <div class="cell functional" data-x="9" data-y="3"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="4"></div>
+                            <div class="cell functional" data-x="1" data-y="4"></div>
+                            <div class="cell functional" data-x="2" data-y="4"></div>
+                            <div class="cell functional" data-x="3" data-y="4"></div>
+                            <div class="cell functional" data-x="4" data-y="4"></div>
+                            <div class="cell functional" data-x="5" data-y="4"></div>
+                            <div class="cell functional" data-x="6" data-y="4"></div>
+                            <div class="cell functional" data-x="7" data-y="4"></div>
+                            <div class="cell functional" data-x="8" data-y="4"></div>
+                            <div class="cell functional" data-x="9" data-y="4"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="5"></div>
+                            <div class="cell functional" data-x="1" data-y="5"></div>
+                            <div class="cell functional" data-x="2" data-y="5"></div>
+                            <div class="cell functional" data-x="3" data-y="5"></div>
+                            <div class="cell functional" data-x="4" data-y="5"></div>
+                            <div class="cell functional" data-x="5" data-y="5"></div>
+                            <div class="cell functional" data-x="6" data-y="5"></div>
+                            <div class="cell functional" data-x="7" data-y="5"></div>
+                            <div class="cell functional" data-x="8" data-y="5"></div>
+                            <div class="cell functional" data-x="9" data-y="5"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="6"></div>
+                            <div class="cell functional" data-x="1" data-y="6"></div>
+                            <div class="cell functional" data-x="2" data-y="6"></div>
+                            <div class="cell functional" data-x="3" data-y="6"></div>
+                            <div class="cell functional" data-x="4" data-y="6"></div>
+                            <div class="cell functional" data-x="5" data-y="6"></div>
+                            <div class="cell functional" data-x="6" data-y="6"></div>
+                            <div class="cell functional" data-x="7" data-y="6"></div>
+                            <div class="cell functional" data-x="8" data-y="6"></div>
+                            <div class="cell functional" data-x="9" data-y="6"></div>
+                        </div>
+                        <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="7"></div>
+                            <div class="cell functional" data-x="1" data-y="7"></div>
+                            <div class="cell functional" data-x="2" data-y="7"></div>
+                            <div class="cell functional" data-x="3" data-y="7"></div>
+                            <div class="cell functional" data-x="4" data-y="7"></div>
+                            <div class="cell functional" data-x="5" data-y="7"></div>
+                            <div class="cell functional" data-x="6" data-y="7"></div>
+                            <div class="cell functional" data-x="7" data-y="7"></div>
+                            <div class="cell functional" data-x="8" data-y="7"></div>
+                            <div class="cell functional" data-x="9" data-y="7"></div>
+                        </div>
+                         <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="8"></div>
+                            <div class="cell functional" data-x="1" data-y="8"></div>
+                            <div class="cell functional" data-x="2" data-y="8"></div>
+                            <div class="cell functional" data-x="3" data-y="8"></div>
+                            <div class="cell functional" data-x="4" data-y="8"></div>
+                            <div class="cell functional" data-x="5" data-y="8"></div>
+                            <div class="cell functional" data-x="6" data-y="8"></div>
+                            <div class="cell functional" data-x="7" data-y="8"></div>
+                            <div class="cell functional" data-x="8" data-y="8"></div>
+                            <div class="cell functional" data-x="9" data-y="8"></div>
+                        </div>
+                         <div class="grid-row">
+                            <div class="cell functional" data-x="0" data-y="9"></div>
+                            <div class="cell functional" data-x="1" data-y="9"></div>
+                            <div class="cell functional" data-x="2" data-y="9"></div>
+                            <div class="cell functional" data-x="3" data-y="9"></div>
+                            <div class="cell functional" data-x="4" data-y="9"></div>
+                            <div class="cell functional" data-x="5" data-y="9"></div>
+                            <div class="cell functional" data-x="6" data-y="9"></div>
+                            <div class="cell functional" data-x="7" data-y="9"></div>
+                            <div class="cell functional" data-x="8" data-y="9"></div>
+                            <div class="cell functional" data-x="9" data-y="9"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- SVG overlay for connectors -->
+                    <svg id="connector-svg" class="connector-overlay">
+                        <defs>
+                            <!-- Arrow marker for connector direction -->
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#e88802"/>
+                            </marker>
+                        </defs>
+                        <g id="connections-layer"></g>
+                        <!-- Template connector (hidden) -->
+                        <g class="connector-template" style="display: none;">
+                            <path class="connector-path-outline" />
+                            <path class="connector-path" />
+                            <circle class="connector-handle input-handle" cx="0" cy="0" r="4" />
+                            <circle class="connector-handle output-handle" cx="0" cy="0" r="4" />
+                        </g>
+                    </svg>
+                    
+                    <!-- Controls -->
+                    <div class="controls">
+                        <button id="simulate-btn" class="btn btn-primary">
+                            <i class="fas fa-play me-2"></i>Run Enhanced Simulation
+                        </button>
+                        <button id="clear-btn" class="btn btn-secondary">
+                            <i class="fas fa-trash me-2"></i>Clear Board
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetParameters()">
+                            <i class="fas fa-undo me-2"></i>Reset Parameters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="results">
+                    <h2>Enhanced Simulation Results</h2>
+                    <div class="error-message" id="error-display"></div>
+                    <div class="plot-area" id="plot-container">
+                        <div class="loading">
+                            <i class="fas fa-dna" style="color: var(--primary); font-size: 2rem;"></i>
+                            <p>Design your circuit and run enhanced simulation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Ontology Analysis Section -->
+                <div class="ontology-analysis" id="ontology-analysis" style="display: none;">
+                    <h2></i>Circuit Analysis</h2>
+                    
+                    <!-- Circuit Status Overview -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="analysis-card">
+                                <h3><i class="fas fa-info-circle me-2"></i>Circuit Status Overview</h3>
+                                <div class="status-grid" id="status-overview">
+                                    <div class="status-item">
+                                        <div class="status-icon valid">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                        <div class="status-content">
+                                            <div class="status-number" id="valid-circuits">0</div>
+                                            <div class="status-label">Valid Circuits</div>
+                                        </div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-icon warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                        <div class="status-content">
+                                            <div class="status-number" id="incomplete-circuits">0</div>
+                                            <div class="status-label">Incomplete Circuits</div>
+                                        </div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-icon error">
+                                            <i class="fas fa-times-circle"></i>
+                                        </div>
+                                        <div class="status-content">
+                                            <div class="status-number" id="extra-components">0</div>
+                                            <div class="status-label">Extra Components</div>
+                                        </div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-icon regulatory">
+                                            <i class="fas fa-network-wired"></i>
+                                        </div>
+                                        <div class="status-content">
+                                            <div class="status-number" id="regulatory-links">0</div>
+                                            <div class="status-label">Regulatory Links</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Circuit Analysis -->
+                    <div class="row">
+                        <!-- Valid Circuits -->
+                        <div class="col-md-6 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-check-circle text-success me-2"></i>Modelable Circuits</h4>
+                                <div class="circuit-list" id="valid-circuits-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-dna text-muted"></i>
+                                        <p>No valid circuits detected yet</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Incomplete Circuits -->
+                        <div class="col-md-6 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-exclamation-triangle text-warning me-2"></i>Incomplete Circuits</h4>
+                                <div class="circuit-list" id="incomplete-circuits-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-exclamation-triangle text-muted"></i>
+                                        <p>No incomplete circuits found</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Regulatory Networks -->
+                        <div class="col-md-6 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-network-wired text-info me-2"></i>Regulatory Networks</h4>
+                                <div class="regulation-list" id="regulations-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-project-diagram text-muted"></i>
+                                        <p>No regulatory networks found</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Equation Display -->
+                        <div class="col-12 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-calculator text-warning me-2"></i>Protein Expression Equations</h4>
+                                <div class="equation-display" id="equation-display-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-dna text-muted"></i>
+                                        <p>No protein equations generated yet</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Unpaired Regulators -->
+                        <div class="col-md-6 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-unlink text-danger me-2"></i>Unpaired Regulators</h4>
+                                <div class="regulator-list" id="unpaired-regulators-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-link text-muted"></i>
+                                        <p>All regulators are properly paired</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Circuit Issues -->
+                        <div class="col-md-6 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-exclamation-triangle text-warning me-2"></i>Circuit Issues</h4>
+                                <div class="issues-list" id="circuit-issues">
+                                    <div class="empty-state">
+                                        <i class="fas fa-shield-alt text-muted"></i>
+                                        <p>No issues detected</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extra Components -->
+                        <div class="col-md-6 mb-3">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-puzzle-piece text-danger me-2"></i>Unassigned Components</h4>
+                                <div class="extras-list" id="extra-components-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-puzzle-piece text-muted"></i>
+                                        <p>All components are properly assigned</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Component Analysis -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="analysis-card">
+                                <h4><i class="fas fa-microscope me-2"></i>Component Analysis</h4>
+                                <div class="component-analysis" id="component-analysis">
+                                    <div class="empty-state">
+                                        <i class="fas fa-cube text-muted"></i>
+                                        <p>Place components to see detailed analysis</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery and jsPlumb for drag-to-connect functionality -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/1.7.11/jquery.jsPlumb-1.7.11-min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tooltip.js') }}"></script>
+    <script>
+        function resetParameters() {
+            // Reset global parameters to default values
+            const globalParams = {
+                'global_transcription_rate': '1.0',
+                'global_translation_rate': '1.0',
+                'global_degradation_rate': '1.0',
+                'temperature_factor': '1.0',
+                'resource_availability': '1.0',
+                'repressor_strength': '2.0',
+                'activator_strength': '3.0',
+                'binding_affinity': '0.1',
+                'cooperativity': '2.0'
+            };
+            
+            // Reset all parameters to their default values
+            Object.keys(globalParams).forEach(paramId => {
+                const element = document.getElementById(paramId);
+                if (element) {
+                    element.value = globalParams[paramId];
+                }
+            });
+            
+            // Reset all dynamic component parameters to their defaults
+            document.querySelectorAll('#dial-form input[type="number"]').forEach(input => {
+                if (input.hasAttribute('data-default')) {
+                    input.value = input.getAttribute('data-default');
+                } else if (!globalParams[input.id]) {
+                    // For dynamic parameters, get the default from the input's value attribute
+                    const defaultValue = input.getAttribute('value');
+                    if (defaultValue) {
+                        input.value = defaultValue;
+                    }
+                }
+            });
+            
+            console.log('Parameters reset to default values');
+        }
+    </script>
+</body>
+</html>
