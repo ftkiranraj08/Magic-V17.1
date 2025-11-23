@@ -1,5 +1,9 @@
 // Simplified Genetic Circuit Designer JavaScript without Gene Tabs System
 
+// Constants
+const REGULATOR_TYPES = ['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End', 
+                        'Inducer Start', 'Inducer End', 'Inhibitor Start', 'Inhibitor End'];
+
 document.addEventListener('DOMContentLoaded', function() {
     // Simplified state management
     const state = {
@@ -177,9 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!dialAccordion) return;
         
         // Skip parameter sections for regulator components (they use constants from constants.py)
-        const regulatorTypes = ['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End', 
-                               'Inducer Start', 'Inducer End', 'Inhibitor Start', 'Inhibitor End'];
-        if (regulatorTypes.includes(componentType)) {
+        if (REGULATOR_TYPES.includes(componentType)) {
             console.log(`Skipping parameter section for regulator component: ${componentType}`);
             return;
         }
@@ -246,9 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get parameters for a specific component type
     function getComponentParameters(componentType, componentNumber) {
         // Skip parameters for regulator components
-        const regulatorTypes = ['Repressor Start', 'Repressor End', 'Activator Start', 'Activator End', 
-                               'Inducer Start', 'Inducer End', 'Inhibitor Start', 'Inhibitor End'];
-        if (regulatorTypes.includes(componentType)) {
+        if (REGULATOR_TYPES.includes(componentType)) {
             return [];
         }
         
@@ -343,10 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         state.cellboard[componentType].push(component);
         
-        // Create dynamic parameter section for this component
-        createDynamicParameterSection(componentType, state.componentCounts[baseType]);
-        
-        // Update visual representation
+        // Update visual representation (no more separate parameter sections)
         updateCellDisplay(x, y, componentType, state.componentCounts[baseType]);
         
         console.log(`Placed ${componentType} #${state.componentCounts[baseType]} at (${x}, ${y})`);
@@ -366,9 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (removed) {
-            // Remove corresponding parameter section
-            removeDynamicParameterSection(removed.type, removed.number);
-            
             // Clear visual representation
             const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
             if (cell) {
@@ -411,20 +405,34 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create component display
         const display = document.createElement('div');
         display.className = 'placed-component';
-        display.textContent = getComponentSymbol(componentType);
         
-        // Use custom name if available, otherwise default
-        const displayName = (component && component.customName) || `${componentType} #${componentNumber}`;
-        display.title = displayName;
+        // Use custom name if available, otherwise show full component type
+        const displayName = (component && component.customName) || componentType;
+        display.textContent = displayName;
+        display.title = `${componentType} #${componentNumber} - Click to edit parameters`;
         
         // Add component-specific styling
         display.classList.add(`component-${componentType.toLowerCase().replace(' ', '-')}`);
         
-        // Add double-click event for renaming
-        display.addEventListener('dblclick', function(e) {
-            e.stopPropagation();
-            showRenameDialog(x, y, componentType, componentNumber, displayName);
-        });
+        // Add double-click event - for components with parameters, open modal; for regulators, do nothing
+        if (!REGULATOR_TYPES.includes(componentType)) {
+            display.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                showComponentParameterModal(x, y, componentType, componentNumber, component);
+            });
+        }
+        
+        // Add single-click event for parameter editing (exclude regulators and global components)
+        if (!REGULATOR_TYPES.includes(componentType)) {
+            display.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showComponentParameterModal(x, y, componentType, componentNumber, component);
+            });
+            
+            // Add visual indicator that component is clickable for parameters
+            display.classList.add('has-parameters');
+            display.title += ' (Click to edit parameters & rename)';
+        }
         
         cell.appendChild(display);
     }
@@ -445,6 +453,150 @@ document.addEventListener('DOMContentLoaded', function() {
             'Inhibitor End': 'Ine'
         };
         return symbols[type] || type.charAt(0);
+    }
+
+    // Show component parameter modal
+    function showComponentParameterModal(x, y, componentType, componentNumber, component) {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'parameter-modal-overlay';
+        
+        // Create modal content
+        const modal = document.createElement('div');
+        modal.className = 'parameter-modal';
+        
+        // Modal header
+        const header = document.createElement('div');
+        header.className = 'parameter-modal-header';
+        
+        const title = document.createElement('h3');
+        title.textContent = `${component?.customName || componentType + ' #' + componentNumber} Parameters`;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'parameter-modal-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.onclick = () => overlay.remove();
+        
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        
+        // Modal body with parameters
+        const body = document.createElement('div');
+        body.className = 'parameter-modal-body';
+        
+        // Add component name/rename field first
+        const nameGroup = document.createElement('div');
+        nameGroup.className = 'parameter-group name-group';
+        
+        const nameLabel = document.createElement('label');
+        nameLabel.textContent = 'Component Name:';
+        nameLabel.setAttribute('for', 'component-name-input');
+        
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.id = 'component-name-input';
+        nameInput.placeholder = `${componentType} #${componentNumber}`;
+        nameInput.value = component?.customName || '';
+        
+        // Add real-time name update
+        nameInput.addEventListener('input', function() {
+            if (component) {
+                component.customName = this.value.trim() || null;
+                // Update the modal title in real-time
+                title.textContent = `${this.value.trim() || componentType + ' #' + componentNumber} Parameters`;
+                console.log(`Renamed component to: ${this.value.trim()}`);
+            }
+        });
+        
+        nameGroup.appendChild(nameLabel);
+        nameGroup.appendChild(nameInput);
+        body.appendChild(nameGroup);
+        
+        // Add separator
+        const separator = document.createElement('div');
+        separator.className = 'parameter-separator';
+        separator.innerHTML = '<hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">';
+        body.appendChild(separator);
+        
+        // Get parameters for this component
+        const parameters = getComponentParameters(componentType, componentNumber);
+        
+        parameters.forEach(param => {
+            const paramGroup = document.createElement('div');
+            paramGroup.className = 'parameter-group';
+            
+            const label = document.createElement('label');
+            label.textContent = param.label;
+            label.setAttribute('for', param.id);
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = param.id;
+            input.name = param.id;
+            input.min = param.min;
+            input.max = param.max;
+            input.step = param.step;
+            // Load existing value if available, otherwise use default
+            const existingValue = component?.parameters?.[param.id];
+            input.value = existingValue !== undefined ? existingValue : param.defaultValue;
+            
+            if (param.title) {
+                input.title = param.title;
+            }
+            
+            // Add real-time update
+            input.addEventListener('input', function() {
+                // Update component data
+                if (component) {
+                    if (!component.parameters) component.parameters = {};
+                    component.parameters[param.id] = parseFloat(this.value);
+                }
+                console.log(`Updated ${param.id} to ${this.value} for component at (${x}, ${y})`);
+            });
+            
+            paramGroup.appendChild(label);
+            paramGroup.appendChild(input);
+            body.appendChild(paramGroup);
+        });
+        
+        // Modal footer
+        const footer = document.createElement('div');
+        footer.className = 'parameter-modal-footer';
+        
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'btn btn-primary';
+        applyBtn.textContent = 'Apply';
+        applyBtn.onclick = () => {
+            // Parameters and name are already updated in real-time
+            // Update the visual display to reflect any name changes
+            updateCellDisplay(x, y, componentType, componentNumber, component?.customName);
+            overlay.remove();
+            console.log(`Applied parameters and name for ${componentType} at (${x}, ${y})`);
+        };
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = () => overlay.remove();
+        
+        footer.appendChild(cancelBtn);
+        footer.appendChild(applyBtn);
+        
+        // Assemble modal
+        modal.appendChild(header);
+        modal.appendChild(body);
+        modal.appendChild(footer);
+        overlay.appendChild(modal);
+        
+        // Add to page
+        document.body.appendChild(overlay);
+        
+        // Close on overlay click
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.remove();
+            }
+        });
     }
 
     function clearComponentSelection() {
@@ -686,6 +838,11 @@ document.addEventListener('DOMContentLoaded', function() {
             simulateBtn.textContent = 'Simulating...';
             simulateBtn.disabled = true;
             
+            // Check if dial parameters should be applied
+            const enableToggle = document.getElementById('enable_dial_params');
+            const applyDial = enableToggle ? enableToggle.checked : true;
+            console.log('Apply dial parameters:', applyDial);
+            
             // Collect dial parameters
             const dialData = collectDialParameters();
             
@@ -693,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const simulationData = {
                 cellboard: state.cellboard,
                 dial: dialData,
-                apply_dial: true
+                apply_dial: applyDial
             };
             
             console.log('Sending simulation data:', simulationData);
@@ -728,16 +885,34 @@ document.addEventListener('DOMContentLoaded', function() {
     function collectDialParameters() {
         const dialData = {};
         
-        // Collect all dial inputs (including dynamic ones)
-        document.querySelectorAll('#dial-form input[type="number"]').forEach(input => {
+        // Collect all dial inputs from the accordion form (global parameters)
+        const dialInputs = document.querySelectorAll('#dial-form input[type="number"]');
+        console.log(`Found ${dialInputs.length} dial parameter inputs`);
+        
+        dialInputs.forEach(input => {
             const key = input.name || input.id;
             const value = parseFloat(input.value);
-            if (!isNaN(value)) {
+            if (!isNaN(value) && key) {
                 dialData[key] = value;
+                console.log(`  - ${key}: ${value}`);
             }
         });
         
-        console.log('Collected dial parameters:', dialData);
+        // Collect component-specific parameters from placed components
+        let componentParams = 0;
+        Object.values(state.cellboard).forEach(componentArray => {
+            componentArray.forEach(component => {
+                if (component.parameters) {
+                    // Merge component-specific parameters into dialData
+                    Object.entries(component.parameters).forEach(([paramId, paramValue]) => {
+                        dialData[paramId] = paramValue;
+                        componentParams++;
+                    });
+                }
+            });
+        });
+        
+        console.log(`Collected dial parameters: ${Object.keys(dialData).length} total (${dialInputs.length} global + ${componentParams} component-specific):`, dialData);
         return dialData;
     }
 
@@ -752,14 +927,240 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsDiv.className = 'simulation-results';
         
         // Add plot if available
-        if (result.plot_data) {
+        if (result.plot) {
             const plotImg = document.createElement('img');
-            plotImg.src = `data:image/png;base64,${result.plot_data}`;
+            plotImg.src = `data:image/png;base64,${result.plot}`;
             plotImg.className = 'simulation-plot';
             plotImg.alt = 'Simulation Results';
+            plotImg.style.maxWidth = '100%';
+            plotImg.style.height = 'auto';
+            plotImg.style.borderRadius = '8px';
+            plotImg.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
             resultsDiv.appendChild(plotImg);
         }
         
+        // Add circuit information
+        if (result.circuits && result.circuits.length > 0) {
+            const circuitInfo = document.createElement('div');
+            circuitInfo.className = 'circuit-info';
+            
+            // Calculate circuit health summary
+            let completeCircuits = 0;
+            let totalIssues = 0;
+            
+            result.circuits.forEach(circuit => {
+                const counts = circuit.component_counts || {};
+                let hasIssues = false;
+                
+                if (!counts.promoter || !counts.rbs || !counts.cds) {
+                    hasIssues = true;
+                    totalIssues++;
+                }
+                if (!hasIssues) completeCircuits++;
+            });
+            
+            let circuitDetailsHTML = `
+                <h3>Circuit Analysis</h3>
+                <p><em>The system automatically groups your placed components into functional genetic circuits. Each circuit represents a complete gene expression unit.</em></p>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Circuits Detected:</strong> ${result.circuits.length}
+                    </div>
+                    <div class="info-item">
+                        <strong>Complete Circuits:</strong> ${completeCircuits}/${result.circuits.length}
+                    </div>
+                    <div class="info-item">
+                        <strong>Components Analyzed:</strong> ${result.components_analyzed || 0}
+                    </div>
+                    <div class="info-item">
+                        <strong>Regulations:</strong> ${result.regulations ? result.regulations.length : 0}
+                    </div>
+                </div>
+            `;
+            
+            // Add detailed circuit breakdown
+            circuitDetailsHTML += '<div class="circuit-details">';
+            result.circuits.forEach((circuit, index) => {
+                circuitDetailsHTML += `
+                    <div class="circuit-detail-item">
+                        <h4>Circuit ${index + 1}: ${circuit.name}</h4>
+                        <div class="component-breakdown">
+                            <strong>Components:</strong>
+                            <ul>
+                `;
+                
+                if (circuit.components) {
+                    circuit.components.forEach(comp => {
+                        // Extract position info if available
+                        let positionInfo = '';
+                        if (comp.channel !== undefined) {
+                            const x = comp.channel % 8;
+                            const y = Math.floor(comp.channel / 8);
+                            positionInfo = ` at position (${x}, ${y})`;
+                        } else if (comp.label && comp.label.includes('_A')) {
+                            // Extract position from label like "promoter_A9"
+                            const match = comp.label.match(/_A(\d+)/);
+                            if (match) {
+                                const channel = parseInt(match[1]);
+                                const x = channel % 8;
+                                const y = Math.floor(channel / 8);
+                                positionInfo = ` at position (${x}, ${y})`;
+                            }
+                        }
+                        
+                        // Show user-friendly name
+                        const displayName = comp.custom_name || comp.name || `${comp.type} #${circuit.components.filter(c => c.type === comp.type).indexOf(comp) + 1}`;
+                        circuitDetailsHTML += `<li>${displayName}${positionInfo}</li>`;
+                    });
+                } else {
+                    circuitDetailsHTML += '<li>No components found</li>';
+                }
+                
+                circuitDetailsHTML += '</ul>';
+                
+                // Show component counts and missing components analysis
+                if (circuit.component_counts) {
+                    circuitDetailsHTML += '<div class="counts"><strong>Counts:</strong> ';
+                    Object.entries(circuit.component_counts).forEach(([type, count]) => {
+                        circuitDetailsHTML += `${type}: ${count}, `;
+                    });
+                    circuitDetailsHTML = circuitDetailsHTML.slice(0, -2) + '</div>';
+                    
+                    // Analyze missing components
+                    const missingComponents = [];
+                    const warnings = [];
+                    
+                    if (!circuit.component_counts.promoter || circuit.component_counts.promoter === 0) {
+                        missingComponents.push('Promoter - needed to initiate transcription');
+                    }
+                    if (!circuit.component_counts.rbs || circuit.component_counts.rbs === 0) {
+                        missingComponents.push('RBS - needed for translation initiation');
+                    }
+                    if (!circuit.component_counts.cds || circuit.component_counts.cds === 0) {
+                        missingComponents.push('CDS - needed to define the protein product');
+                    }
+                    if (!circuit.component_counts.terminator || circuit.component_counts.terminator === 0) {
+                        warnings.push('Terminator - recommended to prevent transcriptional read-through');
+                    }
+                    
+                    // Check for imbalanced components
+                    if (circuit.component_counts.cds && circuit.component_counts.rbs) {
+                        if (circuit.component_counts.rbs < circuit.component_counts.cds) {
+                            warnings.push(`Need more RBS elements: ${circuit.component_counts.rbs} RBS for ${circuit.component_counts.cds} CDS`);
+                        }
+                    }
+                    
+                    if (missingComponents.length > 0) {
+                        circuitDetailsHTML += '<div class="missing-components"><strong>Missing Critical Components:</strong><ul>';
+                        missingComponents.forEach(missing => {
+                            circuitDetailsHTML += `<li>${missing}</li>`;
+                        });
+                        circuitDetailsHTML += '</ul></div>';
+                    }
+                    
+                    if (warnings.length > 0) {
+                        circuitDetailsHTML += '<div class="component-warnings"><strong>Recommendations:</strong><ul>';
+                        warnings.forEach(warning => {
+                            circuitDetailsHTML += `<li>${warning}</li>`;
+                        });
+                        circuitDetailsHTML += '</ul></div>';
+                    }
+                    
+                    // Show circuit completeness status
+                    if (missingComponents.length === 0) {
+                        circuitDetailsHTML += '<div class="circuit-status complete">Circuit is functionally complete</div>';
+                    } else {
+                        circuitDetailsHTML += '<div class="circuit-status incomplete">Circuit is incomplete - missing critical components</div>';
+                    }
+                }
+                
+                circuitDetailsHTML += '</div></div>';
+            });
+            circuitDetailsHTML += '</div>';
+            
+            circuitInfo.innerHTML = circuitDetailsHTML;
+            resultsDiv.appendChild(circuitInfo);
+        }
+
+        // Add regulation information  
+        if (result.regulations && result.regulations.length > 0) {
+            const regulationInfo = document.createElement('div');
+            regulationInfo.className = 'regulation-info';
+            
+            let regulationHTML = `
+                <h3>Regulatory Network</h3>
+                <p><em>Shows how proteins regulate each other's production. "Constitutive" means constant production without regulation.</em></p>
+                <div class="regulation-list">
+            `;
+            
+            result.regulations.forEach((regulation, index) => {
+                // Better display for constitutive regulations
+                const source = regulation.source || 'Constitutive';
+                const target = regulation.target || 'Unknown';
+                const type = regulation.type || 'constitutive';
+                
+                let explanation = '';
+                if (type === 'constitutive' || source === 'Unknown' || source === 'Constitutive') {
+                    explanation = 'This promoter produces protein at a constant rate (not regulated by other proteins)';
+                } else {
+                    explanation = `${source} protein regulates ${target} transcription`;
+                }
+                
+                regulationHTML += `
+                    <div class="regulation-item">
+                        <strong>Regulation ${index + 1}:</strong> 
+                        ${source} → ${target}
+                        <br><small>Type: ${type}, Strength: Kr=${regulation.Kr || 'N/A'}, n=${regulation.n || 'N/A'}</small>
+                        <br><em>${explanation}</em>
+                    </div>
+                `;
+            });
+            
+            regulationHTML += '</div>';
+            regulationInfo.innerHTML = regulationHTML;
+            resultsDiv.appendChild(regulationInfo);
+        }
+
+        // Add unpaired regulators information
+        if (result.unpaired_regulators && result.unpaired_regulators.length > 0) {
+            const unpairedInfo = document.createElement('div');
+            unpairedInfo.className = 'unpaired-info';
+            
+            let unpairedHTML = `
+                <h4>Unpaired Regulators</h4>
+                <div class="unpaired-list">
+            `;
+            
+            result.unpaired_regulators.forEach(regulator => {
+                unpairedHTML += `
+                    <div class="unpaired-item">
+                        ${regulator.label || regulator.id || 'Unknown regulator'} 
+                        <small>(${regulator.type || 'Unknown type'})</small>
+                    </div>
+                `;
+            });
+            
+            unpairedHTML += '</div>';
+            unpairedInfo.innerHTML = unpairedHTML;
+            resultsDiv.appendChild(unpairedInfo);
+        }
+
+        // Add warnings if any
+        if (result.warnings && result.warnings.length > 0) {
+            const warningsDiv = document.createElement('div');
+            warningsDiv.className = 'warnings-container';
+            warningsDiv.innerHTML = '<h4>Warnings</h4>';
+            
+            result.warnings.forEach(warning => {
+                const warningItem = document.createElement('div');
+                warningItem.className = 'warning-item';
+                warningItem.textContent = warning;
+                warningsDiv.appendChild(warningItem);
+            });
+            
+            resultsDiv.appendChild(warningsDiv);
+        }
+
         // Add equations if available
         if (result.equations) {
             const equationsDiv = document.createElement('div');
@@ -769,10 +1170,15 @@ document.addEventListener('DOMContentLoaded', function() {
             Object.entries(result.equations).forEach(([protein, eq]) => {
                 const eqDiv = document.createElement('div');
                 eqDiv.className = 'equation-item';
+                
+                // Format equation properly for MathJax
+                const equationText = eq.latex || eq;
+                const formattedEquation = equationText.includes('\\') ? `$$${equationText}$$` : `$$${equationText}$$`;
+                
                 eqDiv.innerHTML = `
                     <h4>${protein}</h4>
-                    <div class="equation-latex">${eq.latex}</div>
-                    <p class="equation-description">${eq.description}</p>
+                    <div class="equation-latex">${formattedEquation}</div>
+                    <p class="equation-description">${eq.description || 'Constitutive protein production with degradation'}</p>
                 `;
                 equationsDiv.appendChild(eqDiv);
             });
@@ -873,4 +1279,58 @@ document.addEventListener('DOMContentLoaded', function() {
         runSimulation,
         clearBoard
     };
+});
+
+// Hamburger Menu Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburgerToggle = document.querySelector('.hamburger-toggle');
+    const parametersPanel = document.querySelector('.parameters-panel');
+    const closeBtn = document.querySelector('.close-panel');
+    const overlay = document.querySelector('.hamburger-menu');
+    
+    if (hamburgerToggle && parametersPanel) {
+        // Toggle panel visibility
+        function togglePanel() {
+            parametersPanel.classList.toggle('open');
+            hamburgerToggle.classList.toggle('active');
+            document.body.style.overflow = parametersPanel.classList.contains('open') ? 'hidden' : '';
+        }
+        
+        // Open panel
+        hamburgerToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePanel();
+        });
+        
+        // Close panel
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePanel();
+            });
+        }
+        
+        // Close on overlay click
+        if (overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    togglePanel();
+                }
+            });
+        }
+        
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && parametersPanel.classList.contains('open')) {
+                togglePanel();
+            }
+        });
+        
+        // Prevent panel close when clicking inside parameters content
+        parametersPanel.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
 });

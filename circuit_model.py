@@ -224,19 +224,25 @@ class OntologyBuilderUnified:
         # Fill comp.parameters from flat constants
         for comp in comps:
             params = self.constants.get(comp.label, {})
+            print(f"[DEBUG] Assigning parameters to {comp.type} '{comp.label}': found {len(params)} parameters: {params}")
+            
             if comp.type == "promoter":
                 comp.parameters["strength"] = params.get("strength", 1.0)
                 comp.parameters["binding_affinity"] = params.get("binding_affinity", 0.1)
+                print(f"  - Promoter {comp.label}: strength = {comp.parameters['strength']}")
             elif comp.type == "rbs":
                 comp.parameters["efficiency"] = params.get("efficiency", 1.0)
                 comp.parameters["translation_rate"] = params.get("translation_rate", 5.0)
+                print(f"  - RBS {comp.label}: efficiency = {comp.parameters['efficiency']}")
             elif comp.type == "terminator":
                 comp.parameters["efficiency"] = params.get("efficiency", 0.99)
+                print(f"  - Terminator {comp.label}: efficiency = {comp.parameters['efficiency']}")
             elif comp.type == "cds":
                 comp.parameters["translation_rate"] = params.get("translation_rate", 5.0)
                 comp.parameters["degradation_rate"] = params.get("degradation_rate", 0.1)
                 comp.parameters["init_conc"] = params.get("init_conc", 0.01)
                 comp.parameters["max_expression"] = params.get("max_expression", 100.0)
+                print(f"  - CDS {comp.label}: translation_rate = {comp.parameters['translation_rate']}, degradation_rate = {comp.parameters['degradation_rate']}")
 
         # Skip if no CDS
         if not any(c.type == "cds" for c in comps):

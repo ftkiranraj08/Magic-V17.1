@@ -45,12 +45,24 @@
             <p class="lead">Fine-tune circuit parameters for advanced simulation</p>
         </header>
 
-        <!-- Dial Mode Layout -->
-        <div class="dial-mode-container">
-            <!-- Sidebar: Parameter Controls -->
-            <div class="dial-sidebar">
-                <h2>Circuit Parameters</h2>
+        <!-- Cool Animated Hamburger Menu Button -->
+        <div class="hamburger-menu">
+            <button class="hamburger-toggle" id="hamburger-toggle">
+                <div class="hamburger-bar"></div>
+                <div class="hamburger-bar"></div>
+                <div class="hamburger-bar"></div>
+            </button>
+        </div>
 
+        <!-- Slide-out Parameters Panel -->
+        <div class="parameters-panel" id="parameters-panel">
+            <div class="parameters-header">
+                <h2>Circuit Parameters</h2>
+                <button class="close-panel" id="close-panel">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="parameters-content">
                 <div class="dial-toggle">
                     <label class="switch">
                         <input type="checkbox" id="enable_dial_params" checked>
@@ -113,9 +125,10 @@
               </div>
           </form>
             </div>
+        </div>
 
-            <!-- Main Area -->
-            <div class="dial-main">
+        <!-- Full Width Main Content Area -->
+        <div class="main-content">
                 <!-- Component Palette -->
                 <div class="component-palette">
                     <h2>Genetic Components</h2>
@@ -124,16 +137,7 @@
                         <span>Click a component to select</span>
                     </div>
                     
-                    <div class="interaction-mode-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="drag-mode-toggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="toggle-label">
-                            <i class="fas fa-hand-rock"></i>
-                            Enable drag & drop
-                        </span>
-                    </div>
+
 
                 <!-- Unified Components -->
                 <div class="components-grid" id="components-grid">
@@ -292,78 +296,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="component" data-component="Inducer Start" draggable="true" data-tooltip="Add to start inducer regulation.">
-                        <div class="component-name">Inducer Start</div>
-                        <div class="strength-menu">
-                            <div class="strength-option" data-strength="weak">
-                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
-                                Weak
-                            </div>
-                            <div class="strength-option" data-strength="norm">
-                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
-                                Normal
-                            </div>
-                            <div class="strength-option" data-strength="strong">
-                                <div class="strength-indicator" style="background-color: #86efac;"></div>
-                                Strong
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="component" data-component="Inducer End" draggable="true" data-tooltip="Add to end inducer regulation.">
-                        <div class="component-name">Inducer End</div>
-                        <div class="strength-menu">
-                            <div class="strength-option" data-strength="weak">
-                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
-                                Weak
-                            </div>
-                            <div class="strength-option" data-strength="norm">
-                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
-                                Normal
-                            </div>
-                            <div class="strength-option" data-strength="strong">
-                                <div class="strength-indicator" style="background-color: #86efac;"></div>
-                                Strong
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="component" data-component="Inhibitor Start" draggable="true" data-tooltip="Add to start inhibitor regulation.">
-                        <div class="component-name">Inhibitor Start</div>
-                        <div class="strength-menu">
-                            <div class="strength-option" data-strength="weak">
-                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
-                                Weak
-                            </div>
-                            <div class="strength-option" data-strength="norm">
-                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
-                                Normal
-                            </div>
-                            <div class="strength-option" data-strength="strong">
-                                <div class="strength-indicator" style="background-color: #86efac;"></div>
-                                Strong
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="component" data-component="Inhibitor End" draggable="true" data-tooltip="Add to end inhibitor regulation.">
-                        <div class="component-name">Inhibitor End</div>
-                        <div class="strength-menu">
-                            <div class="strength-option" data-strength="weak">
-                                <div class="strength-indicator" style="background-color: #fca5a5;"></div>
-                                Weak
-                            </div>
-                            <div class="strength-option" data-strength="norm">
-                                <div class="strength-indicator" style="background-color: #fcd34d;"></div>
-                                Normal
-                            </div>
-                            <div class="strength-option" data-strength="strong">
-                                <div class="strength-indicator" style="background-color: #86efac;"></div>
-                                Strong
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
 
@@ -372,27 +304,29 @@
                 <!-- Design Board -->
                 <div class="cell-board">
                     <h2>Design Board</h2>
-                    <p class="board-instructions">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>1.</strong> Click a component to select • <strong>2.</strong> Click on board to place • Right-click to remove • Double-click placed components to rename
-                    </p>
                     <div class="grid-container">
-                        <img src="static/css/attached_assests/weas.png" alt="Lab_Logo-C11" class="lab-logo">
                         <div class="cell-board-header">
-                        <h1 class="cell-board-title">
-                        <span class="letter-c">C</span>
-                        <span class="letter-e1">e</span>
-                        <span class="letter-l2">l</span>
-                        <span class="letter-l3">l</span>
-                        <span class="letter-space"> </span>
-                        <span class="letter-b">B</span>
-                        <span class="letter-o">o</span>
-                        <span class="letter-a">a</span>
-                        <span class="letter-r">r</span>
-                        <span class="letter-d">d</span>
-                        </h1>
-                        <p class="lab-subtitle">By the Lopatkin Lab</p>
-                </div>
+                            <img src="static/css/attached_assests/weas.png" alt="Lab_Logo-C11" class="cell-board-logo">
+                            <h1 class="cell-board-title">
+                                <span class="letter-c">C</span>
+                                <span class="letter-e1">e</span>
+                                <span class="letter-l2">l</span>
+                                <span class="letter-l3">l</span>
+                                <span class="letter-space"> </span>
+                                <span class="letter-b">B</span>
+                                <span class="letter-o">o</span>
+                                <span class="letter-a">a</span>
+                                <span class="letter-r">r</span>
+                                <span class="letter-d">d</span>
+                            </h1>
+                            <div class="cell-board-subtitle-container">
+                                <p class="lab-subtitle">
+                                    <span class="line1">By the</span>
+                                    <span class="line2">Lopatkin</span>
+                                    <span class="line3">Lab</span>
+                                </p>
+                            </div>
+                        </div>
                        <!-- Generate 8x8 grid -->
                         <div class="grid-row">
                             <div class="cell functional" data-x="0" data-y="0"></div>
@@ -733,6 +667,63 @@
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tooltip.js') }}"></script>
     <script>
+        // Debug verification script
+        window.debugDial = function() {
+            console.log('=== DIAL Debug Info ===');
+            console.log('Simulate button:', !!document.getElementById('simulate-btn'));
+            console.log('Clear button:', !!document.getElementById('clear-btn'));
+            console.log('Dial form:', !!document.getElementById('dial-form'));
+            console.log('Enable toggle:', !!document.getElementById('enable_dial_params'));
+            const dialInputs = document.querySelectorAll('#dial-form input[type="number"]');
+            console.log('Parameter inputs:', dialInputs.length);
+            dialInputs.forEach(input => {
+                console.log(`  - ${input.name || input.id}: ${input.value}`);
+            });
+            console.log('=======================');
+        };
+        
+        // Auto-run debug on load
+        setTimeout(() => {
+            window.debugDial();
+        }, 2000);
+        
+        // Test function for individual parameters
+        window.testIndividualParameters = function() {
+            console.log('=== Testing Individual Parameters ===');
+            
+            // Simulate placing components
+            if (typeof window.state !== 'undefined') {
+                // Add a test promoter with individual parameters
+                const testComponent = {
+                    type: 'Promoter',
+                    componentNumber: 1,
+                    parameters: {
+                        'promoter1_strength': 3.5
+                    }
+                };
+                
+                if (!window.state.cellboard.Promoter) window.state.cellboard.Promoter = [];
+                window.state.cellboard.Promoter.push(testComponent);
+                
+                console.log('Added test component with individual parameters:', testComponent);
+                console.log('Current cellboard:', window.state.cellboard);
+            }
+            
+            // Test parameter collection
+            if (typeof collectDialParameters === 'function') {
+                const params = collectDialParameters();
+                console.log('Collected parameters:', params);
+                
+                if (params['promoter1_strength']) {
+                    console.log('✅ Individual parameter promoter1_strength found:', params['promoter1_strength']);
+                } else {
+                    console.log('❌ Individual parameter promoter1_strength NOT found');
+                }
+            }
+            
+            console.log('=====================================');
+        };
+
         function resetParameters() {
             // Reset global parameters to default values
             const globalParams = {

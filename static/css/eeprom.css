@@ -12,21 +12,23 @@
     --card-header-bg: transparent;
     --card-header-text: var(--primary);
 }
-/* Base Layout */
+/* Base Layout - using dial.css background */
 body {
-    background-color: rgba(27, 38, 39);
+    /* background-color: rgba(27, 38, 39); */ /* Disabled to use dial.css background */
     color:  rgba(27, 38, 39);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* Navbar styles disabled to use dial.css styles */
+/*
 .navbar {
     background-color: var(--primary) !important;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-    border-radius: 999px; /* pill shape */
-    padding: 0.35rem 1rem; /* vertical and horizontal padding inside the pill */
+    border-radius: 999px; 
+    padding: 0.35rem 1rem; 
     width: auto;
-    max-width: 1100px; /* limit width so it doesn't touch screen edges */
-    margin: 12px auto; /* center horizontally with small gap from top */
+    max-width: 1100px; 
+    margin: 12px auto; 
 }
 
 .navbar-brand {
@@ -34,7 +36,6 @@ body {
     color: rgb(8, 8, 8) !important;
 }
 
-/* Ensure the container inside the navbar doesn't add extra large side padding */
 .navbar .container-fluid {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
@@ -42,7 +43,6 @@ body {
     align-items: center;
 }
 
-/* Responsive: on small screens let navbar use most of the width while keeping rounded look */
 @media (max-width: 768px) {
     .navbar {
         max-width: calc(100% - 2rem);
@@ -63,6 +63,7 @@ body {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
 }
+*/
 /* Page layout tweaks */
 .container {
     max-width: 1100px; /* constrain content for better balance */
@@ -71,13 +72,13 @@ body {
     max-height: 10000px;
 }
 
-/* Header */
-header.text-center h1 {
+/* Header - Basic styling for non-page-header elements */
+header.text-center:not(.page-header) h1 {
     font-size: 2rem;
     margin-bottom: 0.25rem;
     color: var(--primary);
 }
-header.text-center .lead {
+header.text-center:not(.page-header) .lead {
     color: var(--bs-light);
     margin-bottom: 1rem;
 }
@@ -94,6 +95,150 @@ header.text-center .lead {
     color: inherit; /* follow the .card-header text color */
 }
 
+/* ========== GENE COMPONENT PANEL STYLES (FROM DIAL.CSS) ========== */
+
+/* Selection status styling - Modern card design */
+.selection-status {
+    background: linear-gradient(135deg, rgba(178, 243, 95, 0.08), rgba(178, 243, 95, 0.12));
+    border: 2px solid rgba(178, 243, 95, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    color: #e0e0e0;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.selection-status::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(178, 243, 95, 0.1), transparent);
+    transition: left 0.6s;
+}
+
+.selection-status:hover::before {
+    left: 100%;
+}
+
+.selection-status.selected {
+    background: linear-gradient(135deg, rgba(178, 243, 95, 0.15), rgba(178, 243, 95, 0.25));
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 6px 20px rgba(178, 243, 95, 0.3);
+    transform: translateY(-2px);
+}
+
+.selection-status i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.selection-status span {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Unified Components Grid */
+.main-content .components-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem 0;
+}
+
+/* Component blocks for gene panel */
+.main-content .component {
+    width: 100px;
+    height: 60px;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    cursor: grab;
+    color: white;
+    transition: var(--transition);
+    border: 3px solid transparent;
+    position: relative;
+}
+
+.main-content .component:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Component Colors for Gene Panel */
+.component[data-component="Promoter"] { background: #de7689; }
+.component[data-component="Terminator"] { background: rgb(225, 218, 3); }
+.component[data-component="RBS"] { background: #CF9E53; }
+.component[data-component="CDS"] { background: #3C5EB4; }
+.component[data-component="Repressor Start"] { background: #920702; }
+.component[data-component="Repressor End"] { background: #920702; }
+.component[data-component="Activator Start"] { background: #6DB079; }
+.component[data-component="Activator End"] { background: #6DB079; }
+.component[data-component="Inducer Start"] { background: #FF69B4; }
+.component[data-component="Inducer End"] { background: #FF69B4; }
+.component[data-component="Inhibitor Start"] { background: #95a5a6; }
+.component[data-component="Inhibitor End"] { background: #7f8c8d; }
+
+/* Component selection feedback */
+.component.selected {
+    border: 3px solid var(--primary) !important;
+    box-shadow: 0 0 15px rgba(178, 243, 95, 0.6) !important;
+    transform: scale(1.05);
+}
+
+/* Placement mode styling */
+.cell-board.placement-mode .cell.placement-ready {
+    background: rgba(178, 243, 95, 0.1) !important;
+    border-color: var(--primary) !important;
+    cursor: crosshair;
+    animation: pulse 1.5s infinite;
+}
+
+.cell-board.placement-mode .cell.placement-ready:hover {
+    background: rgba(178, 243, 95, 0.3) !important;
+    transform: scale(1.05);
+}
+
+/* Pulse animation for placement-ready cells */
+@keyframes pulse {
+    0% { box-shadow: 0 0 5px rgba(178, 243, 95, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(178, 243, 95, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(178, 243, 95, 0.3); }
+}
+
+/* Component palette */
+.main-content .component-palette {
+    background: rgba(32, 44, 45);
+    border: 3px solid transparent;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.main-content .component-palette h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    border-bottom: 3px solid transparent;
+    padding-bottom: 0.5rem;
+}
+
+/* ========== CELL BOARD STYLES (FROM DIAL.CSS) ========== */
+
 /* Grid preview */
 .grid-container {
     background:  rgba(27, 38, 39);
@@ -102,10 +247,11 @@ header.text-center .lead {
 }
 
 .lab-logoss {
-    max-width: 80px;
-    height: auto;
-    display: block;
-    margin-bottom: 6px;
+    flex: 0 0 auto;
+  width: 150px;
+  height: 120px;
+  object-fit: contain;
+  transform: translateX(-10px);
 }
 
 .cell-board-title1 {
@@ -735,6 +881,197 @@ header.text-center .lead {
     background-color: rgba(27, 38, 39);
 }
 
+/* Full-width layout for hamburger menu version */
+.dial-mode-container-fullwidth {
+    width: 100%;
+    margin-top: 0.5rem;
+    background-color: rgba(27, 38, 39);
+}
+
+/* Hamburger Menu Button - Epic Cell Board Version */
+.hamburger-menu {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 10001;
+}
+
+.hamburger-toggle {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, 
+        rgba(32, 44, 45, 0.95) 0%, 
+        rgba(20, 29, 30, 0.98) 50%, 
+        rgba(32, 44, 45, 0.95) 100%);
+    border: 2px solid rgba(178, 243, 95, 0.4);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1),
+        0 0 0 1px rgba(178, 243, 95, 0.2);
+}
+
+.hamburger-toggle:hover {
+    transform: scale(1.05);
+    border-color: rgba(178, 243, 95, 0.7);
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(178, 243, 95, 0.4),
+        0 0 20px rgba(178, 243, 95, 0.3);
+}
+
+.hamburger-bar {
+    width: 24px;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(178, 243, 95, 0.9), rgba(74, 222, 128, 1));
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Hamburger animation states */
+.hamburger-toggle.active .hamburger-bar:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-toggle.active .hamburger-bar:nth-child(2) {
+    opacity: 0;
+    transform: scale(0);
+}
+
+.hamburger-toggle.active .hamburger-bar:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Slide-out Parameters Panel - Enhanced Cell Board Style */
+.parameters-panel {
+    position: fixed;
+    top: 0;
+    left: -450px;
+    width: 400px;
+    height: 100vh;
+    background: linear-gradient(180deg, 
+        rgba(20, 29, 30, 0.98) 0%, 
+        rgba(32, 44, 45, 0.95) 50%, 
+        rgba(20, 29, 30, 0.98) 100%);
+    backdrop-filter: blur(15px);
+    border-right: 2px solid rgba(178, 243, 95, 0.3);
+    box-shadow: 
+        4px 0 32px rgba(0, 0, 0, 0.3),
+        inset -1px 0 2px rgba(178, 243, 95, 0.1);
+    z-index: 10000;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    pointer-events: auto;
+}
+
+.parameters-panel.open {
+    left: 0;
+    box-shadow: 
+        4px 0 48px rgba(0, 0, 0, 0.5),
+        inset -1px 0 2px rgba(178, 243, 95, 0.2),
+        0 0 0 1px rgba(178, 243, 95, 0.1);
+}
+
+/* Parameters Panel Header */
+.parameters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 2px solid rgba(178, 243, 95, 0.2);
+    background: linear-gradient(135deg, 
+        rgba(32, 44, 45, 0.8) 0%, 
+        rgba(20, 29, 30, 0.9) 100%);
+    backdrop-filter: blur(10px);
+}
+
+.parameters-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: white;
+    font-weight: 600;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(178, 243, 95, 0.9) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.close-panel {
+    width: 36px;
+    height: 36px;
+    background: rgba(178, 243, 95, 0.1);
+    border: 1px solid rgba(178, 243, 95, 0.3);
+    border-radius: 8px;
+    color: rgba(178, 243, 95, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-panel:hover {
+    background: rgba(178, 243, 95, 0.2);
+    border-color: rgba(178, 243, 95, 0.6);
+    color: rgba(178, 243, 95, 1);
+    transform: scale(1.1);
+}
+
+/* Parameters Panel Content */
+.parameters-content {
+    padding: 0;
+    pointer-events: auto;
+    position: relative;
+    z-index: 10001;
+}
+
+.parameters-content .dial-sidebar {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.parameters-content .dial-sidebar + .dial-sidebar {
+    border-top: 2px solid rgba(178, 243, 95, 0.1);
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+/* Panel backdrop overlay - fixed to prevent blocking panel interaction */
+.panel-backdrop {
+    position: fixed;
+    top: 0;
+    left: 400px; /* Start after the panel */
+    width: calc(100vw - 400px);
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.panel-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
 /* Sidebar Column: contains both parameter and board controls */
 .dial-sidebar-column {
     display: flex;
@@ -750,6 +1087,8 @@ header.text-center .lead {
     padding: 1rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     height: fit-content;
+    pointer-events: auto;
+    position: relative;
 }
 
 /* Parameter sidebar - not sticky, flows naturally with scrollable content */
@@ -962,8 +1301,16 @@ header.text-center .lead {
     position: relative;
 }
 
+/* Full-width main area for hamburger layout */
+.dial-mode-container-fullwidth .dial-main {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 1rem;
+}
+
 /* Component palette in dial mode */
-.dial-main .component-palette {
+.main-content .component-palette {
     background: rgba(32, 44, 45);
     border: 3px solid transparent;
     border-radius: var(--border-radius);
@@ -972,7 +1319,7 @@ header.text-center .lead {
     margin-bottom: 0.75rem;
 }
 
-.dial-main .component-palette h2 {
+.main-content .component-palette h2 {
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
     color: white;
@@ -1091,7 +1438,7 @@ header.text-center .lead {
 }
 
 /* Larger component blocks for dial mode: 120x65px for better visibility */
-.dial-main .component {
+.main-content .component {
     width: 100%;
     height: 65px;
     border-radius: var(--border-radius);
@@ -1134,7 +1481,7 @@ header.text-center .lead {
     color: var(--muted, #9aa3a3);
 }
 
-.dial-main .component:hover {
+.main-content .component:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     border-color: rgba(255, 255, 255, 0.3);
@@ -1151,12 +1498,12 @@ header.text-center .lead {
 .component[data-component="Activator End"] { background: #6DB079; }
 .component[data-component="Inducer"] { background: #FF69B4; }
 
-.dial-main .component .strength-menu {
+.main-content .component .strength-menu {
     display: visible;
 }
 
 /* Design board with enhanced styling for dial mode */
-.dial-main .cell-board {
+.main-content .cell-board {
     background: rgba(32, 44, 45);
     border: 3px solid transparent;
     border-radius: var(--border-radius);
@@ -1165,7 +1512,7 @@ header.text-center .lead {
     margin-bottom: 0.75rem;
 }
 
-.dial-main .cell-board h2 {
+.main-content .cell-board h2 {
     color: white;
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
@@ -1173,33 +1520,23 @@ header.text-center .lead {
     padding-bottom: 0.5rem;
 }
 
-.dial-main .grid-container{
-    width: 110%;
-    max-width: 700px;
+.main-content .grid-container{
+    width: 100%;
+    max-width: 1100px;
     margin: 0 auto;
-    border: 3px solid transparent;
-    border-radius: var(--border-radius);
+    border: none;
+    border-radius: 12px;
     overflow: hidden;
-    background: rgba(27, 38, 39);
-    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+    background: rgba(32, 44, 45, 0.8);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
     padding-left: 50px;
     padding-right: 50px;
     padding-bottom: 50px;
     position: relative ;
 }       
-.dial-main .grid-container::after {
-    content: '';
-    position: absolute;
-    top: calc(1 * (calc(var(--cell-size) * 0.52) + 7px) + 156px); /* Start after 1 row */
-    left: calc(1 * (var(--cell-size) + 6.5px) + 62.5px); /* Start after 1 column */
-    width: calc(8 * (var(--cell-size) + 19px) - 2px); /* Width of 8 cells */
-    height: calc(8 * (calc(var(--cell-size) * 0.6) + 44.5px) - 23px); /* Height of 8 rows */
-    border: 6.5px solid #a78bfa; /* Pink border */
-    border-radius: 2px;
-    pointer-events: none;
-    z-index: 15;
-}
-.dial-main .grid-row {
+/* Removed problematic grid-container::after with undefined --cell-size variable */
+.main-content .grid-row {
     display: flex;
     margin-left: 8px;
 }
@@ -1210,33 +1547,12 @@ header.text-center .lead {
   background: rgba(0, 156, 77, 0.2);
   border-color: var(--primary);
 }
-.dial-main .cell {
-    width: 50px;
-    height: 50px;
-    border: 3px solid #000000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    position: relative;
-    transition: var(--transition);
-    background: white;
-    cursor: crosshair;
-    margin-right: 8px; /* Horizontal overlap */
-    margin-bottom: 8px; /* Add vertical spacing */
-    margin-top: 8px; /* Add vertical spacing */
-    
+/* Removed dial-cell styles - using standard .cell styles instead */
 
-  
-}
-
-.dial-main .cell.functional:hover {
-    background: rgba(0, 156, 77, 0.2);
-    border-color: var(--primary);
-}
+/* Duplicate hover styles removed - using main cell hover styles */
 
 /* Simulation Results for dial mode */
-.dial-main .results {
+.main-content .results {
     background:rgba(32, 44, 45);
     border: 3px solid transparent;
     border-radius: var(--border-radius);
@@ -1244,7 +1560,7 @@ header.text-center .lead {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.dial-main .results h2 {
+.main-content .results h2 {
     color: white;
     font-size: 1.25rem;
     margin-bottom: 1.5rem;
@@ -1323,17 +1639,13 @@ header.text-center .lead {
         text-align: left;
     }
     
-    .dial-main .component {
+    .main-content .component {
         width: 80px;
         height: 50px;
         font-size: 0.75rem;
     }
     
-    .dial-main .cell {
-        width: 35px;
-        height: 35px;
-        font-size: 0.6rem;
-    }
+    /* Removed dial-cell responsive styles */
 }
 
 /* Scrollbar styling for sidebar */
@@ -1373,23 +1685,23 @@ header.text-center .lead {
     color: var(--primary);
     font-weight: 700;
 }
-.dial-main .component-palette,
-.dial-main .cell-board,
+.main-content .component-palette,
+.main-content .cell-board,
 .dial-main .results {
   position: relative;
   z-index: 1;
   margin-bottom: 0.75rem;
 }
 
-.dial-main .grid-containerss {
+.main-content .grid-containerss {
   overflow: hidden;     
   contain: paint;       
 }
 
-.dial-main .component-palette { z-index: 2; }
+.main-content .component-palette { z-index: 2; }
 /* Strength Menu */
 
-.dial-main .component .strength-menu {
+.main-content .component .strength-menu {
     display: none;
     position: absolute;
     top: calc(100% + 5px);
@@ -1449,7 +1761,7 @@ header.text-center .lead {
 .connection-handle.connection-target { left: -8px; right: auto; }
 
 
-.dial-main .component .strength-option {
+.main-content .component .strength-option {
     padding: 0.5rem;
     border-radius: calc(var(--border-radius) - 2px);
     cursor: pointer;
@@ -1462,21 +1774,16 @@ header.text-center .lead {
 }
 
 
-.dial-main .component .strength-option:hover {
+.main-content .component .strength-option:hover {
     background: var(--bs-secondary);
 }
 
 
-.dial-main .component  .strength-indicator {
+.main-content .component  .strength-indicator {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.cell-board-header {
-  text-align: center;
-  margin-left: 90px;
 }
 .cell-board-title {
   font-size: 3.5rem;
@@ -1484,28 +1791,37 @@ header.text-center .lead {
   margin: 0;
   line-height: 1.1;
 }
+
+.cell-board-header {
+  text-align: center;
+  margin-left: 90px;
+}
+
 /* Individual letter colors matching the physical board */
-/* Coral */
-.letter-c { color: #6DB079 }       /* Blue */
-.letter-e1 { color: #de7689 }      /* Green */
-.letter-l2 { color:  #bed537; }      /* Green */
-.letter-l3 { color:  #bed537; }      /* Green */
-.letter-b { color: #CF9E53; }       /* Coral */
-.letter-o { color: #030303; }       /* Orange */
-.letter-a { color: #D0021B; }       /* Red */
-.letter-r { color: #6DB079; }       /* Mint */
-.letter-d { color: #3C5EB4; }       /* Purple */
+/* Coral *//* Individual letter colors complementing dark UI theme */
+.letter-c { color: #b2f35f; } /* Primary green */
+.letter-e1 { color: #4ecdc4; } /* Teal accent */
+.letter-l2 { color: #a8e6cf; } /* Light green */
+.letter-l3 { color: #a8e6cf; } /* Light green */
+.letter-b { color: #ffd93d; } /* Warm yellow */
+.letter-o { color: #ffffff; } /* White for contrast */
+.letter-a { color: #ff6b6b; } /* Coral red */
+.letter-r { color: #74b9ff; } /* Light blue */
+.letter-d { color: #fd79a8; } /* Pink accent */
 .letter-mini { 
   color: #4A90E2; 
   font-size: 0.6em;
   vertical-align: super;
 }
+/* Lab subtitle styles disabled to use dial.css styles */
+/*
 .lab-subtitle {
   font-size: 1.2rem;
   color: #666;
   margin-top: 10px;
   font-weight: 300;
 }
+*/
 
 /* Accordion (details/summary) for the dial sidebar */
 .dial-accordion {
@@ -1563,21 +1879,1108 @@ header.text-center .lead {
     box-shadow: 0 6px 18px rgba(0,0,0,0.4);
 }
 
-/* Page header styles */
+/* Page header styles - Epic Cell Board Control title */
 .page-header {
     background: var(--header-bg);
-    padding: 1rem 0 0.5rem 0;
-}
-.page-header h1 {
-    margin: 0;
-    font-size: 2.25rem;
-    color: white;
-    font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
-}
-.page-header .lead {
-    margin: 0.25rem 0 0 0;
-    color: var(--header-subtitle-color);
-    font-weight: 300;
+    padding: 3rem 0 4rem 0;
+    margin-bottom: 2rem;
 }
 
+.page-header h1 {
+    margin: 0;
+    font-size: clamp(4rem, 8vw, 8rem);
+    color: white;
+    font-weight: 900;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    position: relative;
+    z-index: 2;
+    text-shadow: 
+        0 0 20px rgba(178, 243, 95, 0.3),
+        0 8px 16px rgba(0, 0, 0, 0.6),
+        0 16px 32px rgba(0, 0, 0, 0.4),
+        0 24px 48px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, 
+        #ffffff 0%, 
+        rgba(178, 243, 95, 0.9) 50%, 
+        #ffffff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: cellBoardPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes cellBoardPulse {
+    0% { 
+        filter: drop-shadow(0 0 10px rgba(178, 243, 95, 0.3)); 
+        transform: scale(1);
+    }
+    100% { 
+        filter: drop-shadow(0 0 20px rgba(178, 243, 95, 0.6)); 
+        transform: scale(1.02);
+    }
+}
+
+.page-header .lead {
+    margin: 1.5rem 0 0 0;
+    color: #ffffff;
+    font-weight: 400;
+    font-size: clamp(1rem, 2vw, 1.4rem);
+    position: relative;
+    z-index: 2;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+
+/* Responsive Hamburger Menu Styles */
+@media (max-width: 768px) {
+    .hamburger-menu {
+        top: 15px;
+        left: 15px;
+    }
+    
+    .hamburger-toggle {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .hamburger-bar {
+        width: 20px;
+        height: 2.5px;
+    }
+    
+    .parameters-panel {
+        width: 350px;
+        left: -380px;
+    }
+    
+    .parameters-header {
+        padding: 1rem;
+    }
+    
+    .parameters-header h2 {
+        font-size: 1rem;
+    }
+    
+    .dial-mode-container-fullwidth .dial-main {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .parameters-panel {
+        width: calc(100vw - 20px);
+        left: calc(-100vw - 20px);
+    }
+    
+    .hamburger-toggle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .hamburger-bar {
+        width: 18px;
+        height: 2px;
+    }
+}
+
+/* ========== ADDITIONAL CELL BOARD STYLES (FROM DIAL.CSS) ========== */
+
+/* Placement mode styling */
+.cell-board.placement-mode .cell.placement-ready {
+    background: rgba(178, 243, 95, 0.1) !important;
+    border-color: var(--primary) !important;
+    cursor: crosshair;
+    animation: pulse 1.5s infinite;
+}
+
+.cell-board.placement-mode .cell.placement-ready:hover {
+    background: rgba(178, 243, 95, 0.3) !important;
+    transform: scale(1.05);
+}
+
+/* Pulse animation for placement-ready cells */
+@keyframes pulse {
+    0% { box-shadow: 0 0 5px rgba(178, 243, 95, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(178, 243, 95, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(178, 243, 95, 0.3); }
+}
+
+/* Full Width Main Content Area */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 80px 20px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* Component palette */
+.main-content .component-palette {
+    background: rgba(32, 44, 45);
+    border: 3px solid transparent;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.main-content .component-palette h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    border-bottom: 3px solid transparent;
+    padding-bottom: 0.5rem;
+}
+
+/* Enhanced cell board styling */
+.main-content .grid-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(32, 44, 45, 0.8);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 50px;
+    position: relative;
+}
+
+.main-content .grid-row {
+    display: flex;
+    gap: 8px;
+}
+
+.main-content .cell {
+    width: 120px;
+    height: 80px;
+    border: 2px solid #333333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    position: relative;
+    transition: var(--transition);
+    background: rgba(255, 255, 255, 0.05);
+    cursor: crosshair;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    backdrop-filter: blur(2px);
+}
+
+.cell.functional {
+    cursor: crosshair;
+}
+
+.main-content .cell.functional:hover {
+    background: rgba(178, 243, 95, 0.15);
+    border-color: var(--primary);
+    transform: scale(1.02);
+}
+
+.main-content .cell.filled {
+    background: rgba(32, 44, 45, 0.9);
+    border-color: rgba(178, 243, 95, 0.4);
+}
+
+.main-content .cell.filled:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(178, 243, 95, 0.3);
+}
+
+/* Placed component styling */
+.placed-component {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    letter-spacing: -0.01em;
+    text-align: center;
+    padding: 4px;
+    line-height: 1.1;
+    overflow: hidden;
+}
+
+.placed-component:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.placed-component:hover::after {
+    content: "Click to edit parameters";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+    border: 1px solid var(--primary);
+}
+
+/* Component-specific colors */
+.component-promoter { background-color: #e74c3c; }
+.component-rbs { background-color: #f39c12; }
+.component-cds { background-color: #2ecc71; }
+.component-terminator { background-color: #9b59b6; }
+.component-repressor-start { background-color: #e67e22; }
+.component-repressor-end { background-color: #d35400; }
+.component-activator-start { background-color: #3498db; }
+.component-activator-end { background-color: #2980b9; }
+.component-inducer-start { background-color: #1abc9c; }
+.component-inducer-end { background-color: #16a085; }
+.component-inhibitor-start { background-color: #95a5a6; }
+.component-inhibitor-end { background-color: #7f8c8d; }
+
+/* Enhanced component styling for clickable components */
+.placed-component.has-parameters {
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.placed-component.has-parameters:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(178, 243, 95, 0.3);
+}
+
+.placed-component.has-parameters:hover::after {
+    content: "Click/Double-click for parameters & rename";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    z-index: 1000;
+    border: 1px solid var(--primary);
+}
+
+/* ========== STRENGTH MENU STYLES (FROM DIAL.CSS) ========== */
+
+/* Strength Menu */
+.main-content .component .strength-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    padding: 0.5rem;
+}
+
+.main-content .component .strength-option {
+    padding: 0.5rem;
+    border-radius: calc(var(--border-radius) - 2px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    color: var(--bs-light);
+}
+
+.main-content .component .strength-option:hover {
+    background: var(--bs-secondary);
+}
+
+.main-content .component .strength-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Hide strength menus since we're using dynamic parameters instead */
+.strength-menu {
+    display: none !important;
+}
+
+/* Design board with enhanced styling */
+.main-content .cell-board {
+    background: rgba(32, 44, 45);
+    border: 3px solid transparent;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.main-content .cell-board h2 {
+    color: white;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid transparent;
+    padding-bottom: 0.5rem;
+}
+
+/* ========== RESULTS DISPLAY STYLES (FROM DIAL.CSS) ========== */
+
+/* Simulation Results for dial mode */
+.main-content .results {
+    background: rgba(32, 44, 45);
+    border: 3px solid transparent;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.main-content .results h2 {
+    color: white;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid transparent;
+    padding-bottom: 0.5rem;
+}
+
+/* Simulation Results Styling */
+.simulation-results {
+    padding: 20px;
+    color: white;
+}
+
+.simulation-plot {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.circuit-info {
+    background: linear-gradient(135deg, rgba(178, 243, 95, 0.08), rgba(178, 243, 95, 0.12));
+    border: 1px solid rgba(178, 243, 95, 0.25);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(178, 243, 95, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.circuit-info h3 {
+    color: var(--primary);
+    margin-bottom: 12px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.circuit-info h3::before {
+    content: "◉";
+    font-size: 1rem;
+    color: var(--primary);
+    opacity: 0.8;
+}
+
+.circuit-info p em {
+    color: #b3b3b3;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 18px;
+    line-height: 1.5;
+    font-style: normal;
+    opacity: 0.9;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.info-item {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+}
+
+.info-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(178, 243, 95, 0.3);
+    transform: translateY(-1px);
+}
+
+/* ========== ONTOLOGY ANALYSIS STYLES (FROM DIAL.CSS) ========== */
+
+.ontology-analysis {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ontology-analysis h2 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 0.5rem;
+}
+
+.analysis-card {
+    background: rgba(0, 156, 77, 0.05);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    height: 100%;
+    transition: var(--transition);
+}
+
+.analysis-card:hover {
+    border-color: rgba(0, 156, 77, 0.3);
+    background: rgba(0, 156, 77, 0.08);
+}
+
+.analysis-card h3,
+.analysis-card h4 {
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+/* Status Grid Overview */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    border-color: transparent;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--bs-border-color);
+}
+
+.status-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.status-icon.valid {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.status-icon.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-icon.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.status-icon.regulatory {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.status-content {
+    flex: 1;
+}
+
+.status-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--bs-light);
+    line-height: 1;
+}
+
+.status-label {
+    font-size: 0.85rem;
+    color: var(--bs-light);
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+/* Circuit and Component Lists */
+.circuit-list,
+.regulation-list,
+.regulator-list,
+.issues-list,
+.extras-list,
+.component-analysis {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.circuit-item,
+.regulation-item,
+.regulator-item,
+.issue-item,
+.extra-item,
+.component-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--bs-border-color);
+    border-radius: calc(var(--border-radius) - 2px);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: var(--transition);
+}
+
+.circuit-item:hover,
+.regulation-item:hover,
+.regulator-item:hover,
+.issue-item:hover,
+.extra-item:hover,
+.component-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary);
+}
+
+.circuit-item h5,
+.regulation-item h5,
+.issue-item h5,
+.extra-item h5,
+.component-item h5 {
+    color: var(--primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.circuit-meta,
+.regulation-meta,
+.issue-meta,
+.extra-meta,
+.component-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--bs-light);
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+}
+
+.circuit-meta span,
+.regulation-meta span,
+.issue-meta span,
+.extra-meta span,
+.component-meta span {
+    background: rgba(0, 156, 77, 0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.circuit-description,
+.regulation-description,
+.issue-description,
+.extra-description,
+.component-description {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--bs-light);
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--bs-light);
+    opacity: 0.6;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Incomplete Circuits and Unpaired Regulators */
+.circuit-item.incomplete {
+    border-left: 4px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.regulator-item.unpaired {
+    border-left: 4px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Equations Container */
+.equations-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.equations-container h3 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+}
+
+.equation-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary);
+}
+
+.equation-item h4 {
+    color: var(--primary);
+    margin-bottom: 10px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+}
+
+.equation-latex {
+    font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Ubuntu Mono', monospace;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0;
+}
+
+.equation-description {
+    color: #ccc;
+    font-style: italic;
+    margin: 5px 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* ========== PARAMETER MODAL SYSTEM (FROM DIAL.CSS) ========== */
+
+/* Parameter Modal Styles */
+.parameter-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.parameter-modal {
+    background: var(--bs-dark);
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.parameter-modal-header {
+    background: var(--primary);
+    color: var(--bs-dark);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.parameter-modal-header h3 {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.parameter-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--bs-dark);
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.parameter-modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.parameter-modal-body {
+    padding: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.parameter-group {
+    margin-bottom: 15px;
+}
+
+.parameter-group label {
+    display: block;
+    color: var(--primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    margin-bottom: 5px;
+    font-size: 0.875rem;
+    letter-spacing: -0.01em;
+}
+
+.parameter-group input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
+    font-size: 0.875rem;
+    font-weight: 400;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0;
+}
+
+.parameter-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(178, 243, 95, 0.2);
+}
+
+.parameter-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.parameter-modal-footer .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.parameter-modal-footer .btn-primary {
+    background: var(--primary);
+    color: var(--bs-dark);
+}
+
+.parameter-modal-footer .btn-primary:hover {
+    background: rgba(178, 243, 95, 0.8);
+    transform: translateY(-1px);
+}
+
+.parameter-modal-footer .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.parameter-modal-footer .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Special styling for component name field */
+.parameter-group.name-group {
+    background: rgba(178, 243, 95, 0.1);
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid rgba(178, 243, 95, 0.3);
+    margin-bottom: 20px;
+}
+
+.parameter-group.name-group label {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.parameter-group.name-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(178, 243, 95, 0.3);
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.parameter-group.name-group input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(178, 243, 95, 0.2);
+}
+
+.parameter-separator {
+    margin: 15px 0;
+}
+
+/* Responsive Design for Components and Ontology */
+@media (max-width: 768px) {
+    .main-content .components-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .main-content .component {
+        width: 80px;
+        height: 50px;
+        font-size: 0.75rem;
+    }
+    
+    .main-content .cell {
+        width: 90px;
+        height: 60px;
+        font-size: 0.65rem;
+        margin-right: 2px;
+        margin-bottom: 2px;
+        margin-top: 2px;
+    }
+    
+    .main-content .grid-container {
+        max-width: 100%;
+        padding: 0.5rem;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .status-item {
+        padding: 0.75rem;
+    }
+    
+    .status-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .status-number {
+        font-size: 1.25rem;
+    }
+    
+    .analysis-card {
+        padding: 1rem;
+    }
+    
+    .circuit-list,
+    .regulation-list,
+    .issues-list,
+    .extras-list,
+    .component-analysis {
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content .cell {
+        width: 70px;
+        height: 50px;
+        font-size: 0.6rem;
+    }
+    
+    .placed-component {
+        font-size: 0.65rem;
+        padding: 2px;
+    }
+}
+
+/* Force dial.css header layout to take precedence */
+.cell-board-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+    padding: 10px 20px !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+}
+
+.cell-board-logo {
+    flex: 0 0 auto !important;
+    width: 150px !important;
+    height: 120px !important;
+    object-fit: contain !important;
+    transform: translateX(-10px) !important;
+}
+
+.cell-board-title {
+    font-size: 4rem !important;
+    font-weight: 900 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    letter-spacing: -0.02em !important;
+    text-align: center !important;
+    flex: 1 !important;
+}
+
+.cell-board-subtitle-container {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    text-align: right !important;
+    line-height: 1.2 !important;
+}
+
+.lab-subtitle {
+    font-size: 1.0rem !important;
+    color: rgb(186, 216, 0) !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+    font-style: normal !important;
+    line-height: 1.1 !important;
+    transform: translateX(+10px) !important;
+}
+
+.lab-subtitle .line1,
+.lab-subtitle .line2, 
+.lab-subtitle .line3 {
+    display: block !important;
+    margin: 3px 0 !important;
+    font-size: 2.0rem !important;
+}
+
+/* Board mode specific grid container overlay */
+.main-content .grid-container::after {
+    content: '' !important;
+    position: absolute !important;
+    top: calc(1 * (calc(var(--cell-size) * 0.52) + 7px) + 237px) !important; /* Start after 1 row */
+    left: calc(1 * (var(--cell-size) + 6.5px) + 88px) !important; /* Start after 1 column */
+    width: calc(8 * (var(--cell-size) + 19px) + 232px) !important; /* Width of 8 cells */
+    height: calc(8 * (calc(var(--cell-size) * 0.6) + 44.5px) + 225px) !important; /* Height of 8 rows */
+    border: 4.5px solid var(--primary) !important; /* Primary green border for board mode */
+    opacity: 0.6 !important;
+    border-radius: 20px !important;
+    pointer-events: none !important;
+    z-index: 15 !important;
+}
+
+/* Disable liquid glass animations for better performance in board mode */
+.navbar::before,
+.navbar::after {
+    animation: none !important;
+    display: none !important;
+}
+
+/* Disable performance-heavy keyframe animations but preserve transitions */
+@keyframes liquidGlassFlow { 
+    from { opacity: 0; } 
+    to { opacity: 0; } 
+}
+@keyframes liquidGlassFlow2 { 
+    from { opacity: 0; } 
+    to { opacity: 0; } 
+}
+
+/* Optimize hamburger menu performance */
+.hamburger-toggle {
+    transition: transform 0.2s ease, border-color 0.2s ease !important;
+    transform-origin: center !important;
+    will-change: transform !important;
+}
+
+.hamburger-toggle:hover {
+    transform: scale(1.02) !important;
+}
+
+.hamburger-bar {
+    transition: transform 0.2s ease, opacity 0.2s ease !important;
+    will-change: transform, opacity !important;
+}
+
+.parameters-panel {
+    transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    will-change: left !important;
+}
+
+.panel-backdrop {
+    transition: opacity 0.2s ease !important;
+    will-change: opacity !important;
+}

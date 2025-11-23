@@ -172,6 +172,13 @@ def simulate():
         apply_dial = bool(data.get('apply_dial', True))
         dial_data = data.get('dial', {}) if apply_dial else {}
         
+        # Debug logging
+        print(f"[DEBUG] Simulation request received:")
+        print(f"  - Apply dial: {apply_dial}")
+        print(f"  - Dial parameters: {len(dial_data)} items - {dial_data}")
+        print(f"  - Cellboard components: {sum(len(comps) for comps in cellboard.values())}")
+        print(f"  - Cellboard structure: {cellboard}")
+        
         # Convert cellboard format to hardware txt file format
         placed_components = []
         
@@ -252,128 +259,123 @@ def simulate():
         # Apply dial adjustments to constants if provided
         adjusted_constants = COMPONENT_CONSTANTS.copy()
         
-        # Group dial parameters into component-specific overrides
+        # Process dial parameters for component-specific overrides
         if dial_data:
-            print(f"Applying dial parameters: {dial_data}")
+            print(f"[DEBUG] Processing dial parameters: {dial_data}")
             
-            # Create component-specific override groups from dial data
-            override_groups = {
+            # Direct component parameter overrides (highest priority)
+            component_overrides = {}
+            
+            # Global parameter groups (lower priority)
+            global_overrides = {
                 'promoter': {},
                 'rbs': {},
                 'cds': {},
-                'repressor': {}
-            }
-        all_genes = set()
-        for components in cellboard.values():
-            for comp in components:
-                gene_name = comp.get('gene', '')
-                if gene_name.startswith('Gene'):
-                    gene_num = gene_name.split()[-1]
-                    all_genes.add(gene_num)
-            
-            # Map dial parameters to component types with per-gene specificity
-            gene_overrides = {
-                str(g): {'promoter': {}, 'rbs': {}, 'cds': {}, 'terminator': {}}
-                for g in sorted(all_genes, key=lambda x: int(x))
+                'repressor': {},
+                'activator': {}
             }
             
-            # Parse gene-specific parameters
+            # Parse all dial parameters
             for param_name, value in dial_data.items():
                 try:
-                    # Check for gene-specific parameter patterns
-                    if param_name.startswith('promoter') and '_strength' in param_name:
-                        gene_num = param_name.replace('promoter', '').replace('_strength', '')
-                        if gene_num in gene_overrides:
-                            gene_overrides[gene_num]['promoter']['strength'] = float(value)
-                    elif param_name.startswith('rbs') and '_efficiency' in param_name:
-                        gene_num = param_name.replace('rbs', '').replace('_efficiency', '')
-                        if gene_num in gene_overrides:
-                            gene_overrides[gene_num]['rbs']['efficiency'] = float(value)
-                    elif param_name.startswith('cds') and '_translation_rate' in param_name:
-                        gene_num = param_name.replace('cds', '').replace('_translation_rate', '')
-                        if gene_num in gene_overrides:
-                            gene_overrides[gene_num]['cds']['translation_rate'] = float(value)
-                    elif param_name.startswith('cds') and '_degradation_rate' in param_name:
-                        gene_num = param_name.replace('cds', '').replace('_degradation_rate', '')
-                        if gene_num in gene_overrides:
-                            gene_overrides[gene_num]['cds']['degradation_rate'] = float(value)
-                    elif param_name.startswith('terminator') and '_efficiency' in param_name:
-                        gene_num = param_name.replace('terminator', '').replace('_efficiency', '')
-                        if gene_num in gene_overrides:
-                            gene_overrides[gene_num]['terminator']['efficiency'] = float(value)
-                    elif param_name.startswith('protein') and '_initial_conc' in param_name:
-                        gene_num = param_name.replace('protein', '').replace('_initial_conc', '')
-                        if gene_num in gene_overrides:
-                            gene_overrides[gene_num]['cds']['init_conc'] = float(value)
-                    # Handle generic parameters for backwards compatibility
-                    elif param_name in ['strength', 'efficiency', 'translation_rate', 'degradation_rate']:
-                        if param_name == 'strength':
-                            override_groups['promoter']['strength'] = float(value)
-                        elif param_name == 'efficiency':
-                            override_groups['rbs']['efficiency'] = float(value)
-                        elif param_name == 'translation_rate':
-                            override_groups['cds']['translation_rate'] = float(value)
-                        elif param_name == 'degradation_rate':
-                            override_groups['cds']['degradation_rate'] = float(value)
-                    # Handle repressor parameters  
+                    # Individual component parameters (promoter1_strength, cds2_translation_rate, etc.)
+                    if '_' in param_name and any(param_name.startswith(comp_type) for comp_type in ['promoter', 'rbs', 'cds', 'terminator', 'protein']):
+                        # Extract component number and parameter type
+                        if param_name.startswith('promoter') and '_strength' in param_name:
+                            comp_num = param_name.replace('promoter', '').replace('_strength', '')
+                            comp_key = f"promoter_{comp_num}"
+                            if comp_key not in component_overrides:
+                                component_overrides[comp_key] = {}
+                            component_overrides[comp_key]['strength'] = float(value)
+                            print(f"  - Individual override: {comp_key}.strength = {value}")
+                            
+                        elif param_name.startswith('rbs') and '_efficiency' in param_name:
+                            comp_num = param_name.replace('rbs', '').replace('_efficiency', '')
+                            comp_key = f"rbs_{comp_num}"
+                            if comp_key not in component_overrides:
+                                component_overrides[comp_key] = {}
+                            component_overrides[comp_key]['efficiency'] = float(value)
+                            print(f"  - Individual override: {comp_key}.efficiency = {value}")
+                            
+                        elif param_name.startswith('cds') and '_translation_rate' in param_name:
+                            comp_num = param_name.replace('cds', '').replace('_translation_rate', '')
+                            comp_key = f"cds_{comp_num}"
+                            if comp_key not in component_overrides:
+                                component_overrides[comp_key] = {}
+                            component_overrides[comp_key]['translation_rate'] = float(value)
+                            print(f"  - Individual override: {comp_key}.translation_rate = {value}")
+                            
+                        elif param_name.startswith('cds') and '_degradation_rate' in param_name:
+                            comp_num = param_name.replace('cds', '').replace('_degradation_rate', '')
+                            comp_key = f"cds_{comp_num}"
+                            if comp_key not in component_overrides:
+                                component_overrides[comp_key] = {}
+                            component_overrides[comp_key]['degradation_rate'] = float(value)
+                            print(f"  - Individual override: {comp_key}.degradation_rate = {value}")
+                            
+                        elif param_name.startswith('protein') and '_initial_conc' in param_name:
+                            comp_num = param_name.replace('protein', '').replace('_initial_conc', '')
+                            comp_key = f"cds_{comp_num}"  # Protein initial conc goes to CDS
+                            if comp_key not in component_overrides:
+                                component_overrides[comp_key] = {}
+                            component_overrides[comp_key]['init_conc'] = float(value)
+                            print(f"  - Individual override: {comp_key}.init_conc = {value}")
+                            
+                        elif param_name.startswith('terminator') and '_efficiency' in param_name:
+                            comp_num = param_name.replace('terminator', '').replace('_efficiency', '')
+                            comp_key = f"terminator_{comp_num}"
+                            if comp_key not in component_overrides:
+                                component_overrides[comp_key] = {}
+                            component_overrides[comp_key]['efficiency'] = float(value)
+                            print(f"  - Individual override: {comp_key}.efficiency = {value}")
+                    
+                    # Global regulatory parameters
                     elif param_name == 'binding_affinity':
-                        override_groups['repressor']['Kr'] = 1.0 / max(0.01, float(value))
+                        global_overrides['repressor']['Kr'] = 1.0 / max(0.01, float(value))
+                        print(f"  - Global regulatory: repressor Kr = {global_overrides['repressor']['Kr']}")
                     elif param_name == 'cooperativity':
-                        override_groups['repressor']['n'] = float(value)
-                except (ValueError, TypeError):
+                        global_overrides['repressor']['n'] = float(value)
+                        print(f"  - Global regulatory: repressor n = {value}")
+                    elif param_name == 'repressor_strength':
+                        global_overrides['repressor']['strength'] = float(value)
+                        print(f"  - Global regulatory: repressor strength = {value}")
+                    elif param_name == 'activator_strength':
+                        global_overrides['activator']['strength'] = float(value)
+                        print(f"  - Global regulatory: activator strength = {value}")
+                        
+                except (ValueError, TypeError) as e:
+                    print(f"  - Error processing parameter {param_name}: {e}")
                     continue
-            for param_name, value in dial_data.items():
-                for gene_num in gene_overrides:
-                    if f'promoter{gene_num}_strength' in param_name:
-                        gene_overrides[gene_num]['promoter']['strength'] = float(value)
-                    elif f'rbs{gene_num}_efficiency' in param_name:
-                        gene_overrides[gene_num]['rbs']['efficiency'] = float(value)
-                    elif f'cds{gene_num}_translation_rate' in param_name:
-                        gene_overrides[gene_num]['cds']['translation_rate'] = float(value)
-                    elif f'cds{gene_num}_degradation_rate' in param_name:
-                        gene_overrides[gene_num]['cds']['degradation_rate'] = float(value)
-                    elif f'terminator{gene_num}_efficiency' in param_name:
-                        gene_overrides[gene_num]['terminator']['efficiency'] = float(value)
-                    elif f'protein{gene_num}_initial_conc' in param_name:
-                        gene_overrides[gene_num]['cds']['init_conc'] = float(value)
-
-
             
-            # Apply gene-specific overrides first (highest priority)
-            for comp_name in adjusted_constants:
-                comp_type = adjusted_constants[comp_name].get('type', '')
-                
-                # Check if this is a gene-specific component (promoter_1, rbs_2, cds_3, etc.)
-                gene_num = None
-                if '_' in comp_name:
-                    parts = comp_name.split('_')
-                    if len(parts) >= 2 and parts[1].isdigit():
-                        gene_num = parts[1]
-                
-                # Apply gene-specific overrides if available
-                if gene_num and gene_num in gene_overrides:
-                    if comp_type in gene_overrides[gene_num]:
-                        for param_name, override_value in gene_overrides[gene_num][comp_type].items():
-                            if param_name in adjusted_constants[comp_name]:
-                                adjusted_constants[comp_name][param_name] = override_value
-                                print(f"Applied gene-specific override: {comp_name}.{param_name} = {override_value}")
-            
-            # Apply generic component-specific overrides (fallback for non-gene-specific components)
-            for comp_name in adjusted_constants:
-                comp_type = adjusted_constants[comp_name].get('type', '')
-                
-                if comp_type in override_groups:
-                    for param_name, override_value in override_groups[comp_type].items():
+            # Apply individual component overrides first (highest priority)
+            for comp_name, overrides in component_overrides.items():
+                if comp_name in adjusted_constants:
+                    for param_name, override_value in overrides.items():
                         if param_name in adjusted_constants[comp_name]:
-                            # Only apply if not already overridden by gene-specific parameter
+                            original_val = adjusted_constants[comp_name][param_name]
                             adjusted_constants[comp_name][param_name] = override_value
-                            print(f"Applied generic override: {comp_name}.{param_name} = {override_value}")
+                            print(f"Applied individual override: {comp_name}.{param_name} = {original_val} → {override_value}")
+                        else:
+                            print(f"Warning: Parameter {param_name} not found in {comp_name}")
+                else:
+                    print(f"Warning: Component {comp_name} not found in constants")
+            
+            # Apply global regulatory overrides to all relevant components
+            for comp_name in adjusted_constants:
+                comp_type = adjusted_constants[comp_name].get('type', '')
+                if comp_type in global_overrides and global_overrides[comp_type]:
+                    for param_name, override_value in global_overrides[comp_type].items():
+                        if param_name in adjusted_constants[comp_name]:
+                            original_val = adjusted_constants[comp_name][param_name] 
+                            adjusted_constants[comp_name][param_name] = override_value
+                            print(f"Applied global override: {comp_name}.{param_name} = {original_val} → {override_value}")
             
             # Apply global multipliers AFTER overrides (so they affect the final values)
+            print(f"[DEBUG] Processing global parameters from dial_data: {list(dial_data.keys())}")
             for comp_name in adjusted_constants:
                 comp_type = adjusted_constants[comp_name].get('type', '')
                 
-                # Apply global multipliers to the final parameter values
+                # Apply global transcription rate multiplier to promoters
                 if 'global_transcription_rate' in dial_data and comp_type == 'promoter':
                     try:
                         multiplier = float(dial_data['global_transcription_rate'])
@@ -384,20 +386,22 @@ def simulate():
                     except (ValueError, TypeError):
                         pass
                 
+                # Apply global translation rate multiplier to CDS and RBS
                 if 'global_translation_rate' in dial_data:
                     try:
                         multiplier = float(dial_data['global_translation_rate'])
                         if comp_type == 'cds' and 'translation_rate' in adjusted_constants[comp_name]:
                             original_val = adjusted_constants[comp_name]['translation_rate']
                             adjusted_constants[comp_name]['translation_rate'] = original_val * multiplier
-                            print(f"Applied global translation multiplier: {comp_name}.translation_rate = {original_val} * {multiplier} = {original_val * multiplier}")
+                            print(f"Applied global translation multiplier to CDS: {comp_name}.translation_rate = {original_val} * {multiplier} = {original_val * multiplier}")
                         if comp_type == 'rbs' and 'efficiency' in adjusted_constants[comp_name]:
                             original_val = adjusted_constants[comp_name]['efficiency']
                             adjusted_constants[comp_name]['efficiency'] = original_val * multiplier
-                            print(f"Applied global translation multiplier: {comp_name}.efficiency = {original_val} * {multiplier} = {original_val * multiplier}")
+                            print(f"Applied global translation multiplier to RBS: {comp_name}.efficiency = {original_val} * {multiplier} = {original_val * multiplier}")
                     except (ValueError, TypeError):
                         pass
                 
+                # Apply global degradation rate multiplier to CDS
                 if 'global_degradation_rate' in dial_data and comp_type == 'cds':
                     try:
                         multiplier = float(dial_data['global_degradation_rate'])
@@ -407,8 +411,40 @@ def simulate():
                             print(f"Applied global degradation multiplier: {comp_name}.degradation_rate = {original_val} * {multiplier} = {original_val * multiplier}")
                     except (ValueError, TypeError):
                         pass
+                        
+                # Apply temperature factor - affects all reaction rates
+                if 'temperature_factor' in dial_data:
+                    try:
+                        temp_factor = float(dial_data['temperature_factor'])
+                        # Temperature affects all enzymatic reactions
+                        if comp_type == 'promoter' and 'strength' in adjusted_constants[comp_name]:
+                            original_val = adjusted_constants[comp_name]['strength']
+                            adjusted_constants[comp_name]['strength'] = original_val * temp_factor
+                            print(f"Applied temperature factor to promoter: {comp_name}.strength = {original_val} * {temp_factor} = {original_val * temp_factor}")
+                        if comp_type == 'cds' and 'translation_rate' in adjusted_constants[comp_name]:
+                            original_val = adjusted_constants[comp_name]['translation_rate']
+                            adjusted_constants[comp_name]['translation_rate'] = original_val * temp_factor
+                            print(f"Applied temperature factor to CDS: {comp_name}.translation_rate = {original_val} * {temp_factor} = {original_val * temp_factor}")
+                    except (ValueError, TypeError):
+                        pass
+                        
+                # Apply resource availability - affects protein production capacity
+                if 'resource_availability' in dial_data:
+                    try:
+                        resource_factor = float(dial_data['resource_availability'])
+                        # Resource availability affects transcription and translation
+                        if comp_type == 'promoter' and 'strength' in adjusted_constants[comp_name]:
+                            original_val = adjusted_constants[comp_name]['strength']
+                            adjusted_constants[comp_name]['strength'] = original_val * resource_factor
+                            print(f"Applied resource factor to promoter: {comp_name}.strength = {original_val} * {resource_factor} = {original_val * resource_factor}")
+                        if comp_type == 'rbs' and 'efficiency' in adjusted_constants[comp_name]:
+                            original_val = adjusted_constants[comp_name]['efficiency']
+                            adjusted_constants[comp_name]['efficiency'] = original_val * resource_factor
+                            print(f"Applied resource factor to RBS: {comp_name}.efficiency = {original_val} * {resource_factor} = {original_val * resource_factor}")
+                    except (ValueError, TypeError):
+                        pass
             
-            print(f"Applied dial overrides - Gene-specific: {len([k for k in gene_overrides.values() if any(v for v in k.values())])}, Generic: {len(override_groups)}")
+            print(f"Applied dial overrides - Individual: {len(component_overrides)}, Global: {sum(len(v) for v in global_overrides.values())}")
             print("DEBUG: Received dial parameters:", list(dial_data.keys()))
         
         # Debug: Show the converted hardware txt format
